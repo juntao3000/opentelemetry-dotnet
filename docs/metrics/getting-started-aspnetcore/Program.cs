@@ -14,7 +14,11 @@ builder.Services.AddOpenTelemetry()
         //.AddAspNetCoreInstrumentation()
         .AddConsoleExporter((exporterOptions, metricReaderOptions) =>
         {
-            metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 1000;
+            //metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 1000;
+        })
+        .AddOtlpExporter(otlpExporterOptions =>
+        {
+            otlpExporterOptions.Endpoint = new Uri("http://localhost:4317");
         }));
 
 var app = builder.Build();
