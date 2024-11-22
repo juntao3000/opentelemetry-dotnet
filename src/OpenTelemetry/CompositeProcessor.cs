@@ -7,19 +7,22 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry;
 
 /// <summary>
-/// Represents a chain of <see cref="BaseProcessor{T}"/>s.
+/// 表示 <see cref="BaseProcessor{T}"/> 的链。
 /// </summary>
-/// <typeparam name="T">The type of object to be processed.</typeparam>
+/// <typeparam name="T">要处理的对象类型。</typeparam>
 public class CompositeProcessor<T> : BaseProcessor<T>
 {
+    // 链表头节点
     internal readonly DoublyLinkedListNode Head;
+    // 链表尾节点
     private DoublyLinkedListNode tail;
+    // 处理器是否已释放
     private bool disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CompositeProcessor{T}"/> class.
+    /// 初始化 <see cref="CompositeProcessor{T}"/> 类的新实例。
     /// </summary>
-    /// <param name="processors">Processors to add to the composite processor chain.</param>
+    /// <param name="processors">要添加到复合处理器链的处理器。</param>
     public CompositeProcessor(IEnumerable<BaseProcessor<T>> processors)
     {
         Guard.ThrowIfNull(processors);
@@ -40,10 +43,10 @@ public class CompositeProcessor<T> : BaseProcessor<T>
     }
 
     /// <summary>
-    /// Adds a processor to the composite processor chain.
+    /// 向复合处理器链添加处理器。
     /// </summary>
-    /// <param name="processor"><see cref="BaseProcessor{T}"/>.</param>
-    /// <returns>The current instance to support call chaining.</returns>
+    /// <param name="processor"><see cref="BaseProcessor{T}"/>。</param>
+    /// <returns>当前实例以支持调用链。</returns>
     public CompositeProcessor<T> AddProcessor(BaseProcessor<T> processor)
     {
         Guard.ThrowIfNull(processor);
@@ -116,7 +119,7 @@ public class CompositeProcessor<T> : BaseProcessor<T>
             {
                 var timeout = timeoutMilliseconds - sw.ElapsedMilliseconds;
 
-                // notify all the processors, even if we run overtime
+                // 通知所有处理器，即使我们超时
                 result = cur.Value.ForceFlush((int)Math.Max(timeout, 0)) && result;
             }
         }
@@ -142,7 +145,7 @@ public class CompositeProcessor<T> : BaseProcessor<T>
             {
                 var timeout = timeoutMilliseconds - sw.ElapsedMilliseconds;
 
-                // notify all the processors, even if we run overtime
+                // 通知所有处理器，即使我们超时
                 result = cur.Value.Shutdown((int)Math.Max(timeout, 0)) && result;
             }
         }
@@ -176,17 +179,24 @@ public class CompositeProcessor<T> : BaseProcessor<T>
         base.Dispose(disposing);
     }
 
+    /// <summary>
+    /// 双向链表节点类。
+    /// </summary>
     internal sealed class DoublyLinkedListNode
     {
+        // 节点的值
         public readonly BaseProcessor<T> Value;
 
+        // 构造函数，初始化节点
         public DoublyLinkedListNode(BaseProcessor<T> value)
         {
             this.Value = value;
         }
 
+        // 前一个节点
         public DoublyLinkedListNode? Previous { get; set; }
 
+        // 下一个节点
         public DoublyLinkedListNode? Next { get; set; }
     }
 }

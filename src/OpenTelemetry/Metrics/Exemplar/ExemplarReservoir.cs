@@ -10,11 +10,11 @@ namespace OpenTelemetry.Metrics;
 
 #if EXPOSE_EXPERIMENTAL_FEATURES
 /// <summary>
-/// ExemplarReservoir base implementation and contract.
+/// ExemplarReservoir 基类实现和契约。
 /// </summary>
 /// <remarks>
-/// <para experimental-warning="true"><b>WARNING</b>: This is an experimental API which might change or be removed in the future. Use at your own risk.</para>
-/// Specification: <see
+/// <para experimental-warning="true"><b>警告</b>: 这是一个实验性 API，可能会在未来发生变化或被移除。使用风险自负。</para>
+/// 规范: <see
 /// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#exemplarreservoir"/>.
 /// </remarks>
 #if NET
@@ -24,48 +24,41 @@ public
 #else
 internal
 #endif
-    abstract class ExemplarReservoir
+    abstract class ExemplarReservoir // ExemplarReservoir 抽象类，表示示例库的基类
 {
-    // Note: This constructor is internal because we don't allow custom
-    // ExemplarReservoir implementations to be based directly on the base class
-    // only FixedSizeExemplarReservoir.
-    internal ExemplarReservoir()
+    // 注意: 这个构造函数是 internal 的，因为我们不允许自定义的 ExemplarReservoir 实现直接基于基类，只能基于 FixedSizeExemplarReservoir。
+    internal ExemplarReservoir() // ExemplarReservoir 构造函数
     {
     }
 
     /// <summary>
-    /// Gets a value indicating whether or not the <see
-    /// cref="ExemplarReservoir"/> should reset its state when performing
-    /// collection.
+    /// 获取一个值，指示 <see cref="ExemplarReservoir"/> 在执行收集时是否应重置其状态。
     /// </summary>
     /// <remarks>
-    /// Note: <see cref="ResetOnCollect"/> is set to <see langword="true"/> for
-    /// <see cref="MetricPoint"/>s using delta aggregation temporality and <see
-    /// langword="false"/> for <see cref="MetricPoint"/>s using cumulative
-    /// aggregation temporality.
+    /// 注意: 对于使用增量聚合时间性的 <see cref="MetricPoint"/>，<see cref="ResetOnCollect"/> 设置为 <see langword="true"/>，对于使用累积聚合时间性的 <see cref="MetricPoint"/>，设置为 <see langword="false"/>。
     /// </remarks>
-    public bool ResetOnCollect { get; private set; }
+    public bool ResetOnCollect { get; private set; } // 指示是否在收集时重置状态的属性
 
     /// <summary>
-    /// Offers a measurement to the reservoir.
+    /// 向库中提供一个测量值。
     /// </summary>
     /// <param name="measurement"><see cref="ExemplarMeasurement{T}"/>.</param>
-    public abstract void Offer(in ExemplarMeasurement<long> measurement);
+    public abstract void Offer(in ExemplarMeasurement<long> measurement); // 提供一个长整型测量值的抽象方法
 
     /// <summary>
-    /// Offers a measurement to the reservoir.
+    /// 向库中提供一个测量值。
     /// </summary>
     /// <param name="measurement"><see cref="ExemplarMeasurement{T}"/>.</param>
-    public abstract void Offer(in ExemplarMeasurement<double> measurement);
+    public abstract void Offer(in ExemplarMeasurement<double> measurement); // 提供一个双精度型测量值的抽象方法
 
     /// <summary>
-    /// Collects all the exemplars accumulated by the Reservoir.
+    /// 收集库中累积的所有示例。
     /// </summary>
     /// <returns><see cref="ReadOnlyExemplarCollection"/>.</returns>
-    public abstract ReadOnlyExemplarCollection Collect();
+    public abstract ReadOnlyExemplarCollection Collect(); // 收集所有累积示例的抽象方法
 
-    internal virtual void Initialize(AggregatorStore aggregatorStore)
+    internal virtual void Initialize(AggregatorStore aggregatorStore) // 初始化方法
     {
-        this.ResetOnCollect = aggregatorStore.OutputDelta;
+        this.ResetOnCollect = aggregatorStore.OutputDelta; // 根据 AggregatorStore 的 OutputDelta 属性设置 ResetOnCollect
     }
 }

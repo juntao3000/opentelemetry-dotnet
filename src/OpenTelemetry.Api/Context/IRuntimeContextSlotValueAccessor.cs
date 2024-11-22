@@ -4,12 +4,12 @@
 namespace OpenTelemetry.Context;
 
 /// <summary>
-/// Describes a type of <see cref="RuntimeContextSlot{T}"/> which can expose its value as an <see cref="object"/>.
+/// 描述一种 <see cref="RuntimeContextSlot{T}"/> 类型，可以将其值公开为 <see cref="object"/>。
 /// </summary>
 public interface IRuntimeContextSlotValueAccessor
 {
     /// <summary>
-    /// Gets or sets the value of the slot as an <see cref="object"/>.
+    /// 获取或设置槽的值为 <see cref="object"/>。
     /// </summary>
-    object? Value { get; set; }
+    object? Value { get; set; } // 定义一个可空的对象类型属性，用于获取或设置槽的值
 }

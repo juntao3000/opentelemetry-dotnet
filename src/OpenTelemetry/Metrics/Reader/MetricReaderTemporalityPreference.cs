@@ -4,19 +4,18 @@
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Defines the behavior of a <see cref="MetricReader" />
-/// with respect to <see cref="AggregationTemporality" />.
+/// 定义 <see cref="MetricReader" /> 在 <see cref="AggregationTemporality" /> 方面的行为。
 /// </summary>
 public enum MetricReaderTemporalityPreference
 {
     /// <summary>
-    /// All aggregations are performed using cumulative temporality.
+    /// 所有聚合都使用累积时间性进行。
     /// </summary>
     Cumulative = 1,
 
     /// <summary>
-    /// All measurements that are monotonic in nature are aggregated using delta temporality.
-    /// Aggregations of non-monotonic measurements use cumulative temporality.
+    /// 所有单调性质的测量都使用增量时间性进行聚合。
+    /// 非单调测量的聚合使用累积时间性。
     /// </summary>
     Delta = 2,
 }

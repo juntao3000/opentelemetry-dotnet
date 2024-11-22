@@ -8,41 +8,43 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry.Context.Propagation;
 
 /// <summary>
-/// A text map propagator for B3. See https://github.com/openzipkin/b3-propagation.
-/// This class has been deprecated in favour of OpenTelemetry.Extensions.Propagators package.
+/// B3 的文本映射传播器。参见 https://github.com/openzipkin/b3-propagation。
+/// 此类已弃用，建议使用 OpenTelemetry.Extensions.Propagators 包中的 B3Propagator 类。
 /// </summary>
 [Obsolete("Use B3Propagator class from OpenTelemetry.Extensions.Propagators namespace, shipped as part of OpenTelemetry.Extensions.Propagators package.")]
-public sealed class B3Propagator : TextMapPropagator
+public sealed class B3Propagator : TextMapPropagator // B3Propagator 类：用于 B3 传播的文本映射传播器
 {
-    internal const string XB3TraceId = "X-B3-TraceId";
-    internal const string XB3SpanId = "X-B3-SpanId";
-    internal const string XB3ParentSpanId = "X-B3-ParentSpanId";
-    internal const string XB3Sampled = "X-B3-Sampled";
-    internal const string XB3Flags = "X-B3-Flags";
-    internal const string XB3Combined = "b3";
-    internal const char XB3CombinedDelimiter = '-';
+    // 定义 B3 传播所需的常量
+    internal const string XB3TraceId = "X-B3-TraceId"; // B3 TraceId 头
+    internal const string XB3SpanId = "X-B3-SpanId"; // B3 SpanId 头
+    internal const string XB3ParentSpanId = "X-B3-ParentSpanId"; // B3 ParentSpanId 头
+    internal const string XB3Sampled = "X-B3-Sampled"; // B3 Sampled 头
+    internal const string XB3Flags = "X-B3-Flags"; // B3 Flags 头
+    internal const string XB3Combined = "b3"; // B3 组合头
+    internal const char XB3CombinedDelimiter = '-'; // B3 组合头分隔符
 
-    // Used as the upper ActivityTraceId.SIZE hex characters of the traceID. B3-propagation used to send
-    // ActivityTraceId.SIZE hex characters (8-bytes traceId) in the past.
+    // 用作 traceID 的高位 ActivityTraceId.SIZE 十六进制字符。B3 传播过去曾发送 ActivityTraceId.SIZE 十六进制字符（8 字节 traceId）。
     internal const string UpperTraceId = "0000000000000000";
 
-    // Sampled values via the X_B3_SAMPLED header.
+    // 通过 X_B3_SAMPLED 头采样的值。
     internal const string SampledValue = "1";
 
-    // Some old zipkin implementations may send true/false for the sampled header. Only use this for checking incoming values.
+    // 一些旧的 zipkin 实现可能会为采样头发送 true/false。仅用于检查传入值。
     internal const string LegacySampledValue = "true";
 
-    // "Debug" sampled value.
+    // "Debug" 采样值。
     internal const string FlagsValue = "1";
 
+    // 定义所有 B3 头字段的集合
     private static readonly HashSet<string> AllFields = new() { XB3TraceId, XB3SpanId, XB3ParentSpanId, XB3Sampled, XB3Flags };
 
+    // 定义采样值的集合
     private static readonly HashSet<string> SampledValues = new(StringComparer.Ordinal) { SampledValue, LegacySampledValue };
 
-    private readonly bool singleHeader;
+    private readonly bool singleHeader; // 是否使用单一头
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="B3Propagator"/> class.
+    /// 初始化 <see cref="B3Propagator"/> 类的新实例。
     /// </summary>
     [Obsolete("Use B3Propagator class from OpenTelemetry.Extensions.Propagators namespace, shipped as part of OpenTelemetry.Extensions.Propagators package.")]
     public B3Propagator()
@@ -51,9 +53,9 @@ public sealed class B3Propagator : TextMapPropagator
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="B3Propagator"/> class.
+    /// 初始化 <see cref="B3Propagator"/> 类的新实例。
     /// </summary>
-    /// <param name="singleHeader">Determines whether to use single or multiple headers when extracting or injecting span context.</param>
+    /// <param name="singleHeader">确定在提取或注入 span 上下文时是否使用单个或多个头。</param>
     [Obsolete("Use B3Propagator class from OpenTelemetry.Extensions.Propagators namespace, shipped as part of OpenTelemetry.Extensions.Propagators package.")]
     public B3Propagator(bool singleHeader)
     {
@@ -71,7 +73,7 @@ public sealed class B3Propagator : TextMapPropagator
     {
         if (context.ActivityContext.IsValid())
         {
-            // If a valid context has already been extracted, perform a noop.
+            // 如果已提取到有效的上下文，则执行 noop。
             return context;
         }
 
@@ -156,7 +158,7 @@ public sealed class B3Propagator : TextMapPropagator
             {
                 if (traceIdStr.Length == 16)
                 {
-                    // This is an 8-byte traceID.
+                    // 这是一个 8 字节的 traceID。
                     traceIdStr = UpperTraceId + traceIdStr;
                 }
 
@@ -221,7 +223,7 @@ public sealed class B3Propagator : TextMapPropagator
 
             if (traceIdStr.Length == 16)
             {
-                // This is an 8-byte traceID.
+                // 这是一个 8 字节的 traceID。
                 traceIdStr = UpperTraceId + traceIdStr;
             }
 

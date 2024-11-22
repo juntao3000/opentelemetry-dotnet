@@ -4,14 +4,14 @@
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// MeterProvider base class.
+/// MeterProvider 基类。
 /// </summary>
-public class MeterProvider : BaseProvider
+public class MeterProvider : BaseProvider // MeterProvider 类，继承自 BaseProvider
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="MeterProvider"/> class.
+    /// 初始化 <see cref="MeterProvider"/> 类的新实例。
     /// </summary>
-    protected MeterProvider()
+    protected MeterProvider() // 受保护的构造函数，初始化 MeterProvider 类的新实例
     {
     }
 }

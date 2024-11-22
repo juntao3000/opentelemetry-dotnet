@@ -9,28 +9,29 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Stores configuration for a MetricStream.
+/// 存储 MetricStream 的配置。
 /// </summary>
 public class MetricStreamConfiguration
 {
+    // 度量流的名称
     private string? name;
 
+    // 基数限制
     private int? cardinalityLimit = null;
 
     /// <summary>
-    /// Gets the drop configuration.
+    /// 获取丢弃配置。
     /// </summary>
     /// <remarks>
-    /// Note: All metrics for the given instrument will be dropped (not
-    /// collected).
+    /// 注意：给定仪器的所有度量将被丢弃（不收集）。
     /// </remarks>
     public static MetricStreamConfiguration Drop { get; } = new MetricStreamConfiguration { ViewId = -1 };
 
     /// <summary>
-    /// Gets or sets the optional name of the metric stream.
+    /// 获取或设置度量流的可选名称。
     /// </summary>
     /// <remarks>
-    /// Note: If not provided the instrument name will be used.
+    /// 注意：如果未提供，将使用仪器名称。
     /// </remarks>
     public string? Name
     {
@@ -47,26 +48,21 @@ public class MetricStreamConfiguration
     }
 
     /// <summary>
-    /// Gets or sets the optional description of the metric stream.
+    /// 获取或设置度量流的可选描述。
     /// </summary>
     /// <remarks>
-    /// Note: If not provided the instrument description will be used.
+    /// 注意：如果未提供，将使用仪器描述。
     /// </remarks>
     public string? Description { get; set; }
 
     /// <summary>
-    /// Gets or sets the optional tag keys to include in the metric stream.
+    /// 获取或设置要包含在度量流中的可选标签键。
     /// </summary>
     /// <remarks>
-    /// Notes:
+    /// 注意：
     /// <list type="bullet">
-    /// <item>If not provided, all the tags provided by the instrument
-    /// while reporting measurements will be used for aggregation.
-    /// If provided, only those tags in this list will be used
-    /// for aggregation. Providing an empty array will result
-    /// in a metric stream without any tags.
-    /// </item>
-    /// <item>A copy is made of the provided array.</item>
+    /// <item>如果未提供，报告测量时仪器提供的所有标签将用于聚合。如果提供，则仅使用此列表中的标签进行聚合。提供空数组将导致没有任何标签的度量流。</item>
+    /// <item>对提供的数组进行复制。</item>
     /// </list>
     /// </remarks>
     public string[]? TagKeys
@@ -99,19 +95,11 @@ public class MetricStreamConfiguration
     }
 
     /// <summary>
-    /// Gets or sets a positive integer value defining the maximum number of
-    /// data points allowed for the metric managed by the view.
+    /// 获取或设置定义视图管理的度量允许的最大数据点数的正整数值。
     /// </summary>
     /// <remarks>
-    /// <para>Spec reference: <see
-    /// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#cardinality-limits">Cardinality
-    /// limits</see>.</para>
-    /// Note: The cardinality limit determines the maximum number of unique
-    /// dimension combinations for metrics.
-    /// Metrics with zero dimensions and overflow metrics are treated specially
-    /// and do not count against this limit.
-    /// If not set the default
-    /// MeterProvider cardinality limit of 2000 will apply.
+    /// <para>规范参考：<see href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#cardinality-limits">基数限制</see>。</para>
+    /// 注意：基数限制确定度量的唯一维度组合的最大数量。没有维度的度量和溢出度量被特殊处理，不计入此限制。如果未设置，将应用默认的 MeterProvider 基数限制 2000。
     /// </remarks>
     public int? CardinalityLimit
     {
@@ -129,27 +117,24 @@ public class MetricStreamConfiguration
 
 #if EXPOSE_EXPERIMENTAL_FEATURES
     /// <summary>
-    /// Gets or sets a factory function used to generate an <see
-    /// cref="ExemplarReservoir"/> for the metric managed by the view to use
-    /// when storing <see cref="Exemplar"/>s.
+    /// 获取或设置用于生成 <see cref="ExemplarReservoir"/> 的工厂函数，视图管理的度量在存储 <see cref="Exemplar"/> 时使用。
     /// </summary>
     /// <remarks>
     /// <inheritdoc cref="ExemplarReservoir" path="/remarks/para[@experimental-warning='true']"/>
-    /// <para>Note: Returning <see langword="null"/> from the factory function will
-    /// result in the default <see cref="ExemplarReservoir"/> being chosen by
-    /// the SDK based on the type of metric.</para>
-    /// Specification: <see
-    /// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#stream-configuration"/>.
+    /// <para>注意：从工厂函数返回 <see langword="null"/> 将导致 SDK 根据度量类型选择默认的 <see cref="ExemplarReservoir"/>。</para>
+    /// 规范：<see href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#stream-configuration"/>.
     /// </remarks>
 #if NET
-    [Experimental(DiagnosticDefinitions.ExemplarReservoirExperimentalApi, UrlFormat = DiagnosticDefinitions.ExperimentalApiUrlFormat)]
+        [Experimental(DiagnosticDefinitions.ExemplarReservoirExperimentalApi, UrlFormat = DiagnosticDefinitions.ExperimentalApiUrlFormat)]
 #endif
     public Func<ExemplarReservoir?>? ExemplarReservoirFactory { get; set; }
 #else
-    internal Func<ExemplarReservoir?>? ExemplarReservoirFactory { get; set; }
+        internal Func<ExemplarReservoir?>? ExemplarReservoirFactory { get; set; }
 #endif
 
+    // 复制的标签键
     internal string[]? CopiedTagKeys { get; private set; }
 
+    // 视图 ID
     internal int? ViewId { get; set; }
 }

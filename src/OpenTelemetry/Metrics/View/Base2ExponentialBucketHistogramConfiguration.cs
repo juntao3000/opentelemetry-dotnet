@@ -4,18 +4,20 @@
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Stores configuration for a histogram metric stream with base-2 exponential bucket boundaries.
+/// 存储具有 base-2 指数桶边界的直方图度量流的配置。
 /// </summary>
 public sealed class Base2ExponentialBucketHistogramConfiguration : HistogramConfiguration
 {
+    // 最大桶数，默认为 Metric.DefaultExponentialHistogramMaxBuckets
     private int maxSize = Metric.DefaultExponentialHistogramMaxBuckets;
+    // 最大比例因子，默认为 Metric.DefaultExponentialHistogramMaxScale
     private int maxScale = Metric.DefaultExponentialHistogramMaxScale;
 
     /// <summary>
-    /// Gets or sets the maximum number of buckets in each of the positive and negative ranges, not counting the special zero bucket.
+    /// 获取或设置正负范围内每个范围的最大桶数，不包括特殊的零桶。
     /// </summary>
     /// <remarks>
-    /// The default value is 160. The minimum size is 2.
+    /// 默认值为 160。最小值为 2。
     /// </remarks>
     public int MaxSize
     {
@@ -26,6 +28,7 @@ public sealed class Base2ExponentialBucketHistogramConfiguration : HistogramConf
 
         set
         {
+            // 如果值小于 2，则抛出异常
             if (value < 2)
             {
                 throw new ArgumentException($"Histogram max size is invalid. Minimum size is 2.", nameof(value));
@@ -36,11 +39,10 @@ public sealed class Base2ExponentialBucketHistogramConfiguration : HistogramConf
     }
 
     /// <summary>
-    /// Gets or sets the maximum scale factor used to determine the resolution of bucket boundaries.
-    /// The higher the scale the higher the resolution.
+    /// 获取或设置用于确定桶边界分辨率的最大比例因子。比例越高，分辨率越高。
     /// </summary>
     /// <remarks>
-    /// The default value is 20. The minimum size is -11. The maximum size is 20.
+    /// 默认值为 20。最小值为 -11。最大值为 20。
     /// </remarks>
     public int MaxScale
     {
@@ -51,6 +53,7 @@ public sealed class Base2ExponentialBucketHistogramConfiguration : HistogramConf
 
         set
         {
+            // 如果值不在 [-11, 20] 范围内，则抛出异常
             if (value < -11 || value > 20)
             {
                 throw new ArgumentException($"Histogram max scale is invalid. Max scale must be in the range [-11, 20].", nameof(value));

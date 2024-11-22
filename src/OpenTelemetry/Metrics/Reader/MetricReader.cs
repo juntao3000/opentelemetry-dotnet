@@ -8,15 +8,18 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// MetricReader base class.
+/// MetricReader 基类。
 /// </summary>
 public abstract partial class MetricReader : IDisposable
 {
+    // 未指定的 MetricReaderTemporalityPreference 常量
     private const MetricReaderTemporalityPreference MetricReaderTemporalityPreferenceUnspecified = (MetricReaderTemporalityPreference)0;
 
+    // 累积时间偏好函数
     private static readonly Func<Type, AggregationTemporality> CumulativeTemporalityPreferenceFunc =
         (instrumentType) => AggregationTemporality.Cumulative;
 
+    // 单调增量时间偏好函数
     private static readonly Func<Type, AggregationTemporality> MonotonicDeltaTemporalityPreferenceFunc = (instrumentType) =>
     {
         return instrumentType.GetGenericTypeDefinition() switch
@@ -25,29 +28,37 @@ public abstract partial class MetricReader : IDisposable
             var type when type == typeof(ObservableCounter<>) => AggregationTemporality.Delta,
             var type when type == typeof(Histogram<>) => AggregationTemporality.Delta,
 
-            // Temporality is not defined for gauges, so this does not really affect anything.
+            // 暂时性未定义的仪表，不会影响任何事情。
             var type when type == typeof(ObservableGauge<>) => AggregationTemporality.Delta,
             var type when type == typeof(Gauge<>) => AggregationTemporality.Delta,
 
             var type when type == typeof(UpDownCounter<>) => AggregationTemporality.Cumulative,
             var type when type == typeof(ObservableUpDownCounter<>) => AggregationTemporality.Cumulative,
 
-            // TODO: Consider logging here because we should not fall through to this case.
+            // TODO: 考虑在此处记录日志，因为不应落入此情况。
             _ => AggregationTemporality.Delta,
         };
     };
 
+    // 新任务锁
     private readonly Lock newTaskLock = new();
+    // 收集锁
     private readonly Lock onCollectLock = new();
+    // 关闭任务完成源
     private readonly TaskCompletionSource<bool> shutdownTcs = new();
+    // 时间偏好
     private MetricReaderTemporalityPreference temporalityPreference = MetricReaderTemporalityPreferenceUnspecified;
+    // 时间函数
     private Func<Type, AggregationTemporality> temporalityFunc = CumulativeTemporalityPreferenceFunc;
+    // 关闭计数
     private int shutdownCount;
+    // 收集任务完成源
     private TaskCompletionSource<bool>? collectionTcs;
+    // 父提供者
     private BaseProvider? parentProvider;
 
     /// <summary>
-    /// Gets or sets the metric reader temporality preference.
+    /// 获取或设置度量读取器的时间偏好。
     /// </summary>
     public MetricReaderTemporalityPreference TemporalityPreference
     {
@@ -78,33 +89,26 @@ public abstract partial class MetricReader : IDisposable
     }
 
     /// <summary>
-    /// Attempts to collect the metrics, blocks the current thread until
-    /// metrics collection completed, shutdown signaled or timed out.
-    /// If there are asynchronous instruments involved, their callback
-    /// functions will be triggered.
+    /// 尝试收集度量，阻塞当前线程直到度量收集完成、关闭信号或超时。
+    /// 如果涉及异步仪表，它们的回调函数将被触发。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或<c>Timeout.Infinite</c>表示无限等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when metrics collection succeeded; otherwise,
-    /// <c>false</c>.
+    /// 返回<c>true</c>表示度量收集成功；否则返回<c>false</c>。
     /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when the <c>timeoutMilliseconds</c> is smaller than -1.
+    /// 当<c>timeoutMilliseconds</c>小于-1时抛出。
     /// </exception>
     /// <remarks>
-    /// This function guarantees thread-safety. If multiple calls occurred
-    /// simultaneously, they might get folded and result in less calls to
-    /// the <c>OnCollect</c> callback for improved performance, as long as
-    /// the semantic can be preserved.
+    /// 此函数保证线程安全。如果同时发生多个调用，它们可能会折叠并导致较少的<c>OnCollect</c>回调调用，以提高性能，只要语义可以保留。
     /// </remarks>
     public bool Collect(int timeoutMilliseconds = Timeout.Infinite)
     {
         Guard.ThrowIfInvalidTimeout(timeoutMilliseconds);
 
-        OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Collect method called.");
+        OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Collect 方法被调用。");
         var shouldRunCollect = false;
         var tcs = this.collectionTcs;
 
@@ -146,43 +150,40 @@ public abstract partial class MetricReader : IDisposable
 
         if (result)
         {
-            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Collect succeeded.");
+            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Collect 成功。");
         }
         else
         {
-            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Collect failed.");
+            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Collect 失败。");
         }
 
         return result;
     }
 
     /// <summary>
-    /// Attempts to shutdown the processor, blocks the current thread until
-    /// shutdown completed or timed out.
+    /// 尝试关闭处理器，阻塞当前线程直到关闭完成或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或<c>Timeout.Infinite</c>表示无限等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when shutdown succeeded; otherwise, <c>false</c>.
+    /// 返回<c>true</c>表示关闭成功；否则返回<c>false</c>。
     /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when the <c>timeoutMilliseconds</c> is smaller than -1.
+    /// 当<c>timeoutMilliseconds</c>小于-1时抛出。
     /// </exception>
     /// <remarks>
-    /// This function guarantees thread-safety. Only the first call will
-    /// win, subsequent calls will be no-op.
+    /// 此函数保证线程安全。只有第一次调用会生效，后续调用将无效。
     /// </remarks>
     public bool Shutdown(int timeoutMilliseconds = Timeout.Infinite)
     {
         Guard.ThrowIfInvalidTimeout(timeoutMilliseconds);
 
-        OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Shutdown called.");
+        OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Shutdown 被调用。");
 
         if (Interlocked.CompareExchange(ref this.shutdownCount, 1, 0) != 0)
         {
-            return false; // shutdown already called
+            return false; // 已经调用过关闭
         }
 
         var result = false;
@@ -199,11 +200,11 @@ public abstract partial class MetricReader : IDisposable
 
         if (result)
         {
-            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Shutdown succeeded.");
+            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Shutdown 成功。");
         }
         else
         {
-            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Shutdown failed.");
+            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.Shutdown 失败。");
         }
 
         return result;
@@ -216,22 +217,24 @@ public abstract partial class MetricReader : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// 设置父提供者。
+    /// </summary>
+    /// <param name="parentProvider">父提供者。</param>
     internal virtual void SetParentProvider(BaseProvider parentProvider)
     {
         this.parentProvider = parentProvider;
     }
 
     /// <summary>
-    /// Processes a batch of metrics.
+    /// 处理一批度量。
     /// </summary>
-    /// <param name="metrics">Batch of metrics to be processed.</param>
+    /// <param name="metrics">要处理的一批度量。</param>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或<c>Timeout.Infinite</c>表示无限等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when metrics processing succeeded; otherwise,
-    /// <c>false</c>.
+    /// 返回<c>true</c>表示度量处理成功；否则返回<c>false</c>。
     /// </returns>
     internal virtual bool ProcessMetrics(in Batch<Metric> metrics, int timeoutMilliseconds)
     {
@@ -239,25 +242,20 @@ public abstract partial class MetricReader : IDisposable
     }
 
     /// <summary>
-    /// Called by <c>Collect</c>. This function should block the current
-    /// thread until metrics collection completed, shutdown signaled or
-    /// timed out.
+    /// 由<c>Collect</c>调用。此函数应阻塞当前线程直到度量收集完成、关闭信号或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或<c>Timeout.Infinite</c>表示无限等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when metrics collection succeeded; otherwise,
-    /// <c>false</c>.
+    /// 返回<c>true</c>表示度量收集成功；否则返回<c>false</c>。
     /// </returns>
     /// <remarks>
-    /// This function is called synchronously on the threads which called
-    /// <c>Collect</c>. This function should not throw exceptions.
+    /// 此函数在调用<c>Collect</c>的线程上同步调用。此函数不应抛出异常。
     /// </remarks>
     protected virtual bool OnCollect(int timeoutMilliseconds)
     {
-        OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.OnCollect called.");
+        OpenTelemetrySdkEventSource.Log.MetricReaderEvent("MetricReader.OnCollect 被调用。");
 
         var sw = timeoutMilliseconds == Timeout.Infinite
             ? null
@@ -266,22 +264,22 @@ public abstract partial class MetricReader : IDisposable
         var meterProviderSdk = this.parentProvider as MeterProviderSdk;
         meterProviderSdk?.CollectObservableInstruments();
 
-        OpenTelemetrySdkEventSource.Log.MetricReaderEvent("Observable instruments collected.");
+        OpenTelemetrySdkEventSource.Log.MetricReaderEvent("可观察仪表已收集。");
 
         var metrics = this.GetMetricsBatch();
 
         bool result;
         if (sw == null)
         {
-            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics called.");
+            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics 被调用。");
             result = this.ProcessMetrics(metrics, Timeout.Infinite);
             if (result)
             {
-                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics succeeded.");
+                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics 成功。");
             }
             else
             {
-                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics failed.");
+                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics 失败。");
             }
 
             return result;
@@ -292,19 +290,19 @@ public abstract partial class MetricReader : IDisposable
 
             if (timeout <= 0)
             {
-                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("OnCollect failed timeout period has elapsed.");
+                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("OnCollect 失败，超时时间已过。");
                 return false;
             }
 
-            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics called.");
+            OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics 被调用。");
             result = this.ProcessMetrics(metrics, (int)timeout);
             if (result)
             {
-                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics succeeded.");
+                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics 成功。");
             }
             else
             {
-                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics failed.");
+                OpenTelemetrySdkEventSource.Log.MetricReaderEvent("ProcessMetrics 失败。");
             }
 
             return result;
@@ -312,20 +310,16 @@ public abstract partial class MetricReader : IDisposable
     }
 
     /// <summary>
-    /// Called by <c>Shutdown</c>. This function should block the current
-    /// thread until shutdown completed or timed out.
+    /// 由<c>Shutdown</c>调用。此函数应阻塞当前线程直到关闭完成或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或<c>Timeout.Infinite</c>表示无限等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when shutdown succeeded; otherwise, <c>false</c>.
+    /// 返回<c>true</c>表示关闭成功；否则返回<c>false</c>。
     /// </returns>
     /// <remarks>
-    /// This function is called synchronously on the thread which made the
-    /// first call to <c>Shutdown</c>. This function should not throw
-    /// exceptions.
+    /// 此函数在第一次调用<c>Shutdown</c>的线程上同步调用。此函数不应抛出异常。
     /// </remarks>
     protected virtual bool OnShutdown(int timeoutMilliseconds)
     {
@@ -333,12 +327,11 @@ public abstract partial class MetricReader : IDisposable
     }
 
     /// <summary>
-    /// Releases the unmanaged resources used by this class and optionally
-    /// releases the managed resources.
+    /// 释放此类使用的非托管资源，并可选择释放托管资源。
     /// </summary>
     /// <param name="disposing">
-    /// <see langword="true"/> to release both managed and unmanaged resources;
-    /// <see langword="false"/> to release only unmanaged resources.
+    /// <see langword="true"/>表示释放托管和非托管资源；
+    /// <see langword="false"/>表示仅释放非托管资源。
     /// </param>
     protected virtual void Dispose(bool disposing)
     {

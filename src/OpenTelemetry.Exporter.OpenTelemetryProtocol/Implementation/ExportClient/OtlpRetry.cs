@@ -11,7 +11,7 @@ using Status = Google.Rpc.Status;
 namespace OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient;
 
 /// <summary>
-/// Implementation of the OTLP retry policy used by both OTLP/gRPC and OTLP/HTTP.
+/// OTLP重试策略的实现，适用于OTLP/gRPC和OTLP/HTTP。
 ///
 /// OTLP/gRPC
 /// https://github.com/open-telemetry/opentelemetry-proto/blob/main/docs/specification.md#failures
@@ -19,39 +19,34 @@ namespace OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClie
 /// OTLP/HTTP
 /// https://github.com/open-telemetry/opentelemetry-proto/blob/main/docs/specification.md#failures-1
 ///
-/// The specification requires retries use an exponential backoff strategy,
-/// but does not provide specifics for the implementation. As such, this
-/// implementation is inspired by the retry strategy provided by
-/// Grpc.Net.Client which implements the gRPC retry specification.
+/// 规范要求重试使用指数退避策略，但没有提供具体的实现细节。因此，这个实现借鉴了
+/// Grpc.Net.Client提供的重试策略，该策略实现了gRPC重试规范。
 ///
-/// Grpc.Net.Client retry implementation
+/// Grpc.Net.Client重试实现
 /// https://github.com/grpc/grpc-dotnet/blob/83d12ea1cb628156c990243bc98699829b88738b/src/Grpc.Net.Client/Internal/Retry/RetryCall.cs#L94
 ///
-/// gRPC retry specification
+/// gRPC重试规范
 /// https://github.com/grpc/proposal/blob/master/A6-client-retries.md
 ///
-/// The gRPC retry specification outlines configurable parameters used in its
-/// exponential backoff strategy: initial backoff, max backoff, backoff
-/// multiplier, and max retry attempts. The OTLP specification does not declare
-/// a similar set of parameters, so this implementation uses fixed settings.
-/// Furthermore, since the OTLP spec does not specify a max number of attempts,
-/// this implementation will retry until the deadline is reached.
+/// gRPC重试规范概述了其指数退避策略中使用的可配置参数：初始退避时间、最大退避时间、退避倍数和最大重试次数。
+/// OTLP规范没有声明类似的参数，因此这个实现使用固定设置。此外，由于OTLP规范没有指定最大尝试次数，
+/// 这个实现将重试直到达到截止时间。
 ///
-/// The throttling mechanism for OTLP differs from the throttling mechanism
-/// described in the gRPC retry specification. See:
-/// https://github.com/open-telemetry/opentelemetry-proto/blob/main/docs/specification.md#otlpgrpc-throttling.
+/// OTLP的限流机制与gRPC重试规范中描述的限流机制不同。见：
+/// https://github.com/open-telemetry/opentelemetry-proto/blob/main/docs/specification.md#otlpgrpc-throttling。
 /// </summary>
-internal static class OtlpRetry
+internal static class OtlpRetry // OTLP重试策略的实现类
 {
-    public const string GrpcStatusDetailsHeader = "grpc-status-details-bin";
-    public const int InitialBackoffMilliseconds = 1000;
-    private const int MaxBackoffMilliseconds = 5000;
-    private const double BackoffMultiplier = 1.5;
+    public const string GrpcStatusDetailsHeader = "grpc-status-details-bin"; // gRPC状态详情头
+    public const int InitialBackoffMilliseconds = 1000; // 初始退避时间（毫秒）
+    private const int MaxBackoffMilliseconds = 5000; // 最大退避时间（毫秒）
+    private const double BackoffMultiplier = 1.5; // 退避倍数
 
 #if !NET
-    private static readonly Random Random = new Random();
+    private static readonly Random Random = new Random(); // 随机数生成器
 #endif
 
+    // 尝试获取HTTP重试结果
     public static bool TryGetHttpRetryResult(ExportClientHttpResponse response, int retryDelayInMilliSeconds, out RetryResult retryResult)
     {
         if (response.StatusCode.HasValue)
@@ -75,12 +70,14 @@ internal static class OtlpRetry
         }
     }
 
+    // 判断是否应处理HttpRequestException
     public static bool ShouldHandleHttpRequestException(Exception? exception)
     {
-        // TODO: Handle specific exceptions.
+        // TODO: 处理特定异常。
         return true;
     }
 
+    // 尝试获取gRPC重试结果
     public static bool TryGetGrpcRetryResult(ExportClientGrpcResponse response, int retryDelayMilliseconds, out RetryResult retryResult)
     {
         if (response.Exception is RpcException rpcException)
@@ -92,18 +89,17 @@ internal static class OtlpRetry
         return false;
     }
 
+    // 尝试获取重试结果
     private static bool TryGetRetryResult<TStatusCode, TCarrier>(TStatusCode statusCode, Func<TStatusCode, bool, bool> isRetryable, DateTime? deadline, TCarrier carrier, Func<TStatusCode, TCarrier, TimeSpan?> throttleGetter, int nextRetryDelayMilliseconds, out RetryResult retryResult)
     {
         retryResult = default;
 
-        // TODO: Consider introducing a fixed max number of retries (e.g. max 5 retries).
-        // The spec does not specify a max number of retries, but it may be bad to not cap the number of attempts.
-        // Without a max number of retry attempts, retries would continue until the deadline.
-        // Maybe this is ok? However, it may lead to an unexpected behavioral change. For example:
-        //    1) When using a batch processor, a longer delay due to repeated
-        //       retries up to the deadline may lead to a higher chance that the queue will be exhausted.
-        //    2) When using the simple processor, a longer delay due to repeated
-        //       retries up to the deadline will lead to a prolonged blocking call.
+        // TODO: 考虑引入固定的最大重试次数（例如最多5次重试）。
+        // 规范没有指定最大重试次数，但不限制尝试次数可能会带来不好的影响。
+        // 如果没有最大重试次数限制，重试将持续到截止时间。
+        // 这可能是可以的？但是，这可能会导致意外的行为变化。例如：
+        //    1) 使用批处理器时，由于重复重试导致的更长延迟可能会导致队列耗尽的可能性更高。
+        //    2) 使用简单处理器时，由于重复重试导致的更长延迟将导致阻塞调用时间延长。
         // if (attemptCount >= MaxAttempts)
         // {
         //     return false
@@ -134,7 +130,7 @@ internal static class OtlpRetry
         {
             try
             {
-                // TODO: Consider making nextRetryDelayMilliseconds a double to avoid the need for convert/overflow handling
+                // TODO: 考虑将nextRetryDelayMilliseconds改为double以避免转换/溢出处理
                 nextRetryDelayMilliseconds = Convert.ToInt32(throttleDelay.Value.TotalMilliseconds);
             }
             catch (OverflowException)
@@ -148,12 +144,14 @@ internal static class OtlpRetry
         return true;
     }
 
+    // 判断是否超过截止时间
     private static bool IsDeadlineExceeded(DateTime? deadline)
     {
-        // This implementation is internal, and it is guaranteed that deadline is UTC.
+        // 这个实现是内部的，保证deadline是UTC时间。
         return deadline.HasValue && deadline <= DateTime.UtcNow;
     }
 
+    // 计算下一个重试延迟
     private static int CalculateNextRetryDelay(int nextRetryDelayMilliseconds)
     {
         var nextMilliseconds = nextRetryDelayMilliseconds * BackoffMultiplier;
@@ -161,6 +159,7 @@ internal static class OtlpRetry
         return Convert.ToInt32(nextMilliseconds);
     }
 
+    // 尝试获取gRPC重试延迟
     private static TimeSpan? TryGetGrpcRetryDelay(StatusCode statusCode, Metadata trailers)
     {
         Debug.Assert(trailers != null, "trailers was null");
@@ -187,6 +186,7 @@ internal static class OtlpRetry
         return null;
     }
 
+    // 尝试获取HTTP重试延迟
     private static TimeSpan? TryGetHttpRetryDelay(HttpStatusCode statusCode, HttpResponseHeaders? responseHeaders)
     {
 #if NETSTANDARD2_1_OR_GREATER || NET
@@ -198,6 +198,7 @@ internal static class OtlpRetry
             : null;
     }
 
+    // 判断gRPC状态码是否可重试
     private static bool IsGrpcStatusCodeRetryable(StatusCode statusCode, bool hasRetryDelay)
     {
         switch (statusCode)
@@ -216,6 +217,7 @@ internal static class OtlpRetry
         }
     }
 
+    // 判断HTTP状态码是否可重试
     private static bool IsHttpStatusCodeRetryable(HttpStatusCode statusCode, bool hasRetryDelay)
     {
         switch (statusCode)
@@ -234,13 +236,14 @@ internal static class OtlpRetry
         }
     }
 
+    // 获取随机数
     private static int GetRandomNumber(int min, int max)
     {
 #if NET
         return Random.Shared.Next(min, max);
 #else
-        // TODO: Implement this better to minimize lock contention.
-        // Consider pulling in Random.Shared implementation.
+        // TODO: 更好地实现这一点以最小化锁争用。
+        // 考虑引入Random.Shared实现。
         lock (Random)
         {
             return Random.Next(min, max);
@@ -248,11 +251,12 @@ internal static class OtlpRetry
 #endif
     }
 
+    // 重试结果结构体
     public readonly struct RetryResult
     {
-        public readonly bool Throttled;
-        public readonly TimeSpan RetryDelay;
-        public readonly int NextRetryDelayMilliseconds;
+        public readonly bool Throttled; // 是否限流
+        public readonly TimeSpan RetryDelay; // 重试延迟
+        public readonly int NextRetryDelayMilliseconds; // 下一个重试延迟（毫秒）
 
         public RetryResult(bool throttled, TimeSpan retryDelay, int nextRetryDelayMilliseconds)
         {

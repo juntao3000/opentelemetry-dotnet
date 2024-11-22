@@ -6,58 +6,57 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry;
 
 /// <summary>
-/// Enumeration used to define the result of an export operation.
+/// 枚举，用于定义导出操作的结果。
 /// </summary>
 public enum ExportResult
 {
     /// <summary>
-    /// Export succeeded.
+    /// 导出成功。
     /// </summary>
     Success = 0,
 
     /// <summary>
-    /// Export failed.
+    /// 导出失败。
     /// </summary>
     Failure = 1,
 }
 
 /// <summary>
-/// Exporter base class.
+/// 导出器基类。
 /// </summary>
-/// <typeparam name="T">The type of object to be exported.</typeparam>
+/// <typeparam name="T">要导出的对象类型。</typeparam>
 public abstract class BaseExporter<T> : IDisposable
     where T : class
 {
+    // 关闭计数
     private int shutdownCount;
 
     /// <summary>
-    /// Gets the parent <see cref="BaseProvider"/>.
+    /// 获取父 <see cref="BaseProvider"/>。
     /// </summary>
     public BaseProvider? ParentProvider { get; internal set; }
 
     /// <summary>
-    /// Exports a batch of telemetry objects.
+    /// 导出一批遥测对象。
     /// </summary>
-    /// <param name="batch">Batch of telemetry objects to export.</param>
-    /// <returns>Result of the export operation.</returns>
+    /// <param name="batch">要导出的遥测对象批次。</param>
+    /// <returns>导出操作的结果。</returns>
     public abstract ExportResult Export(in Batch<T> batch);
 
     /// <summary>
-    /// Flushes the exporter, blocks the current thread until flush
-    /// completed, shutdown signaled or timed out.
+    /// 刷新导出器，阻塞当前线程直到刷新完成、关闭信号或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或 <c>Timeout.Infinite</c> 表示无限等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when flush succeeded; otherwise, <c>false</c>.
+    /// 刷新成功时返回 <c>true</c>；否则返回 <c>false</c>。
     /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when the <c>timeoutMilliseconds</c> is smaller than -1.
+    /// 当 <c>timeoutMilliseconds</c> 小于 -1 时抛出。
     /// </exception>
     /// <remarks>
-    /// This function guarantees thread-safety.
+    /// 此函数保证线程安全。
     /// </remarks>
     public bool ForceFlush(int timeoutMilliseconds = Timeout.Infinite)
     {
@@ -75,22 +74,19 @@ public abstract class BaseExporter<T> : IDisposable
     }
 
     /// <summary>
-    /// Attempts to shutdown the exporter, blocks the current thread until
-    /// shutdown completed or timed out.
+    /// 尝试关闭导出器，阻塞当前线程直到关闭完成或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或 <c>Timeout.Infinite</c> 表示无限等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when shutdown succeeded; otherwise, <c>false</c>.
+    /// 关闭成功时返回 <c>true</c>；否则返回 <c>false</c>。
     /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when the <c>timeoutMilliseconds</c> is smaller than -1.
+    /// 当 <c>timeoutMilliseconds</c> 小于 -1 时抛出。
     /// </exception>
     /// <remarks>
-    /// This function guarantees thread-safety. Only the first call will
-    /// win, subsequent calls will be no-op.
+    /// 此函数保证线程安全。只有第一次调用会生效，后续调用将无效。
     /// </remarks>
     public bool Shutdown(int timeoutMilliseconds = Timeout.Infinite)
     {
@@ -98,7 +94,7 @@ public abstract class BaseExporter<T> : IDisposable
 
         if (Interlocked.Increment(ref this.shutdownCount) > 1)
         {
-            return false; // shutdown already called
+            return false; // 已经调用过关闭
         }
 
         try
@@ -120,20 +116,16 @@ public abstract class BaseExporter<T> : IDisposable
     }
 
     /// <summary>
-    /// Called by <c>ForceFlush</c>. This function should block the current
-    /// thread until flush completed, shutdown signaled or timed out.
+    /// 由 <c>ForceFlush</c> 调用。此函数应阻塞当前线程直到刷新完成、关闭信号或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或 <c>Timeout.Infinite</c> 表示无限等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when flush succeeded; otherwise, <c>false</c>.
+    /// 刷新成功时返回 <c>true</c>；否则返回 <c>false</c>。
     /// </returns>
     /// <remarks>
-    /// This function is called synchronously on the thread which called
-    /// <c>ForceFlush</c>. This function should be thread-safe, and should
-    /// not throw exceptions.
+    /// 此函数在调用 <c>ForceFlush</c> 的线程上同步调用。此函数应是线程安全的，并且不应抛出异常。
     /// </remarks>
     protected virtual bool OnForceFlush(int timeoutMilliseconds)
     {
@@ -141,20 +133,16 @@ public abstract class BaseExporter<T> : IDisposable
     }
 
     /// <summary>
-    /// Called by <c>Shutdown</c>. This function should block the current
-    /// thread until shutdown completed or timed out.
+    /// 由 <c>Shutdown</c> 调用。此函数应阻塞当前线程直到关闭完成或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或 <c>Timeout.Infinite</c> 表示无限等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when shutdown succeeded; otherwise, <c>false</c>.
+    /// 关闭成功时返回 <c>true</c>；否则返回 <c>false</c>。
     /// </returns>
     /// <remarks>
-    /// This function is called synchronously on the thread which made the
-    /// first call to <c>Shutdown</c>. This function should not throw
-    /// exceptions.
+    /// 此函数在第一次调用 <c>Shutdown</c> 的线程上同步调用。此函数不应抛出异常。
     /// </remarks>
     protected virtual bool OnShutdown(int timeoutMilliseconds)
     {
@@ -162,12 +150,11 @@ public abstract class BaseExporter<T> : IDisposable
     }
 
     /// <summary>
-    /// Releases the unmanaged resources used by this class and optionally
-    /// releases the managed resources.
+    /// 释放此类使用的非托管资源，并可选地释放托管资源。
     /// </summary>
     /// <param name="disposing">
-    /// <see langword="true"/> to release both managed and unmanaged resources;
-    /// <see langword="false"/> to release only unmanaged resources.
+    /// <see langword="true"/> 表示释放托管和非托管资源；
+    /// <see langword="false"/> 表示仅释放非托管资源。
     /// </param>
     protected virtual void Dispose(bool disposing)
     {

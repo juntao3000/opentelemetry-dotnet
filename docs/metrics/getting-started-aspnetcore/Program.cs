@@ -11,7 +11,7 @@ builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource
         .AddService(serviceName: builder.Environment.ApplicationName))
     .WithMetrics(metrics => metrics
-        .AddAspNetCoreInstrumentation()
+        //.AddAspNetCoreInstrumentation()
         .AddConsoleExporter((exporterOptions, metricReaderOptions) =>
         {
             metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 1000;

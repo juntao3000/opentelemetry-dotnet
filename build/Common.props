@@ -18,6 +18,12 @@
     <!--<AnalysisLevel>latest-All</AnalysisLevel>-->
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageVersion Include="StackExchange.Redis" Version="2.6.122" />
+    <PackageVersion Include="Confluent.Kafka" Version="2.4.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.0" />
+  </ItemGroup>
+
   <PropertyGroup Label="BuildFlags">
     <RunningDotNetPack Condition="'$(RunningDotNetPack)' == ''">false</RunningDotNetPack>
   </PropertyGroup>
@@ -28,7 +34,7 @@
     <NetFrameworkSupportedVersions>net481;net48;net472;net471;net47;net462</NetFrameworkSupportedVersions>
 
     <!-- production TFMs -->
-    <TargetFrameworksForLibraries>net9.0;net8.0;netstandard2.0;$(NetFrameworkMinimumSupportedVersion)</TargetFrameworksForLibraries>
+    <TargetFrameworksForLibraries>net9.0;net8.0;netstandard2.0</TargetFrameworksForLibraries>
     <TargetFrameworksForLibrariesExtended>net9.0;net8.0;netstandard2.1;netstandard2.0;$(NetFrameworkMinimumSupportedVersion)</TargetFrameworksForLibrariesExtended>
     <TargetFrameworksForPrometheusAspNetCore>net9.0;net8.0</TargetFrameworksForPrometheusAspNetCore>
     <TargetFrameworksRequiringSystemTextJsonDirectReference>net8.0;netstandard2.1;netstandard2.0;$(NetFrameworkMinimumSupportedVersion)</TargetFrameworksRequiringSystemTextJsonDirectReference>

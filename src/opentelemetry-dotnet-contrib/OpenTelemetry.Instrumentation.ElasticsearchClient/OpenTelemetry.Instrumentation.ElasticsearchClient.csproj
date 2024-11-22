@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- OmniSharp/VS Code requires TargetFrameworks to be in descending order for IntelliSense and analysis. -->
+    <TargetFrameworks>$(NetStandardMinimumSupportedVersion)</TargetFrameworks>
+    <Description>Elasticsearch instrumentation for OpenTelemetry .NET.</Description>
+    <PackageTags>$(PackageTags);distributed-tracing</PackageTags>
+    <MinVerTagPrefix>Instrumentation.ElasticsearchClient-</MinVerTagPrefix>
+    <SystemTextJsonMinimumRequiredPkgVer>$(SystemTextJsonMinimumOutOfBandPkgVer)</SystemTextJsonMinimumRequiredPkgVer>
+  </PropertyGroup>
+
+  <!-- Do not run Package Baseline Validation as this package has never released a stable version.
+  Remove this property once we have released a stable version and add PackageValidationBaselineVersion property. -->
+  <PropertyGroup>
+    <DisablePackageBaselineValidation>true</DisablePackageBaselineValidation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Net.Http" Condition="'$(TargetFramework)' == '$(NetFrameworkMinimumSupportedVersion)'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\AssemblyVersionExtensions.cs" Link="Includes\AssemblyVersionExtensions.cs" />
+    <Compile Include="..\Shared\DiagnosticSourceListener.cs" Link="Includes\DiagnosticSourceListener.cs" />
+    <Compile Include="..\Shared\DiagnosticSourceSubscriber.cs" Link="Includes\DiagnosticSourceSubscriber.cs" />
+    <Compile Include="..\Shared\ActivityInstrumentationHelper.cs" Link="Includes\ActivityInstrumentationHelper.cs" />
+    <Compile Include="..\Shared\ExceptionExtensions.cs" Link="Includes\ExceptionExtensions.cs" />
+    <Compile Include="..\Shared\Guard.cs" Link="Includes\Guard.cs" />
+    <Compile Include="..\Shared\ListenerHandler.cs" Link="Includes\ListenerHandler.cs" />
+    <Compile Include="..\Shared\MultiTypePropertyFetcher.cs" Link="Includes\MultiTypePropertyFetcher.cs" />
+    <Compile Include="..\Shared\SemanticConventions.cs" Link="Includes\SemanticConventions.cs" />
+    <Compile Include="..\Shared\SpanHelper.cs" Link="Includes\SpanHelper.cs" />
+    <Compile Include="..\Shared\UriHelper.cs" Link="Includes\UriHelper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OpenTelemetry\OpenTelemetry.csproj" />
+  </ItemGroup>
+
+</Project>

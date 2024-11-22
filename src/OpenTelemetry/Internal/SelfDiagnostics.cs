@@ -4,19 +4,19 @@
 namespace OpenTelemetry.Internal;
 
 /// <summary>
-/// Self diagnostics class captures the EventSource events sent by OpenTelemetry
-/// modules and writes them to local file for internal troubleshooting.
+/// 自诊断类捕获由OpenTelemetry模块发送的EventSource事件，并将其写入本地文件以进行内部故障排除。
 /// </summary>
 internal sealed class SelfDiagnostics : IDisposable
 {
     /// <summary>
-    /// Long-living object that hold relevant resources.
+    /// 长生命周期对象，持有相关资源。
     /// </summary>
     private static readonly SelfDiagnostics Instance = new();
     private readonly SelfDiagnosticsConfigRefresher configRefresher;
 
     static SelfDiagnostics()
     {
+        // 在进程退出时，调用Dispose方法释放资源
         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) =>
         {
             Instance.Dispose();
@@ -25,14 +25,13 @@ internal sealed class SelfDiagnostics : IDisposable
 
     private SelfDiagnostics()
     {
+        // 初始化配置刷新器
         this.configRefresher = new SelfDiagnosticsConfigRefresher();
     }
 
     /// <summary>
-    /// No member of SelfDiagnostics class is explicitly called when an EventSource class, say
-    /// OpenTelemetryApiEventSource, is invoked to send an event.
-    /// To trigger CLR to initialize static fields and static constructors of SelfDiagnostics,
-    /// call EnsureInitialized method before any EventSource event is sent.
+    /// 当EventSource类（例如OpenTelemetryApiEventSource）被调用以发送事件时，不会显式调用SelfDiagnostics类的任何成员。
+    /// 为了触发CLR初始化SelfDiagnostics的静态字段和静态构造函数，在发送任何EventSource事件之前调用EnsureInitialized方法。
     /// </summary>
     public static void EnsureInitialized()
     {
@@ -49,6 +48,7 @@ internal sealed class SelfDiagnostics : IDisposable
     {
         if (disposing)
         {
+            // 释放配置刷新器资源
             this.configRefresher.Dispose();
         }
     }

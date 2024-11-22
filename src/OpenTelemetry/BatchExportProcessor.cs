@@ -8,38 +8,53 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry;
 
 /// <summary>
-/// Implements processor that batches telemetry objects before calling exporter.
+/// 实现导出遥测对象的处理器。
 /// </summary>
-/// <typeparam name="T">The type of telemetry object to be exported.</typeparam>
+/// <typeparam name="T">要导出的遥测对象的类型。</typeparam>
 public abstract class BatchExportProcessor<T> : BaseExportProcessor<T>
     where T : class
 {
+    // 默认最大队列大小
     internal const int DefaultMaxQueueSize = 2048;
+    // 默认计划延迟时间（毫秒）
     internal const int DefaultScheduledDelayMilliseconds = 5000;
+    // 默认导出超时时间（毫秒）
     internal const int DefaultExporterTimeoutMilliseconds = 30000;
+    // 默认最大导出批次大小
     internal const int DefaultMaxExportBatchSize = 512;
 
+    // 最大导出批次大小
     internal readonly int MaxExportBatchSize;
+    // 计划延迟时间（毫秒）
     internal readonly int ScheduledDelayMilliseconds;
+    // 导出超时时间（毫秒）
     internal readonly int ExporterTimeoutMilliseconds;
 
+    // 环形缓冲区
     private readonly CircularBuffer<T> circularBuffer;
+    // 导出线程
     private readonly Thread exporterThread;
+    // 导出触发器
     private readonly AutoResetEvent exportTrigger = new(false);
+    // 数据导出通知
     private readonly ManualResetEvent dataExportedNotification = new(false);
+    // 关闭触发器
     private readonly ManualResetEvent shutdownTrigger = new(false);
+    // 关闭排空目标
     private long shutdownDrainTarget = long.MaxValue;
+    // 丢弃计数
     private long droppedCount;
+    // 是否已释放
     private bool disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BatchExportProcessor{T}"/> class.
+    /// 初始化 <see cref="BatchExportProcessor{T}"/> 类的新实例。
     /// </summary>
-    /// <param name="exporter">Exporter instance.</param>
-    /// <param name="maxQueueSize">The maximum queue size. After the size is reached data are dropped. The default value is 2048.</param>
-    /// <param name="scheduledDelayMilliseconds">The delay interval in milliseconds between two consecutive exports. The default value is 5000.</param>
-    /// <param name="exporterTimeoutMilliseconds">How long the export can run before it is cancelled. The default value is 30000.</param>
-    /// <param name="maxExportBatchSize">The maximum batch size of every export. It must be smaller or equal to maxQueueSize. The default value is 512.</param>
+    /// <param name="exporter">导出器实例。</param>
+    /// <param name="maxQueueSize">最大队列大小。达到此大小后数据将被丢弃。默认值为 2048。</param>
+    /// <param name="scheduledDelayMilliseconds">两次连续导出之间的延迟间隔（毫秒）。默认值为 5000。</param>
+    /// <param name="exporterTimeoutMilliseconds">导出运行的最长时间（毫秒），超过此时间将被取消。默认值为 30000。</param>
+    /// <param name="maxExportBatchSize">每次导出的最大批次大小。必须小于或等于 maxQueueSize。默认值为 512。</param>
     protected BatchExportProcessor(
         BaseExporter<T> exporter,
         int maxQueueSize = DefaultMaxQueueSize,
@@ -66,17 +81,17 @@ public abstract class BatchExportProcessor<T> : BaseExportProcessor<T>
     }
 
     /// <summary>
-    /// Gets the number of telemetry objects dropped by the processor.
+    /// 获取处理器丢弃的遥测对象数量。
     /// </summary>
     internal long DroppedCount => Volatile.Read(ref this.droppedCount);
 
     /// <summary>
-    /// Gets the number of telemetry objects received by the processor.
+    /// 获取处理器接收的遥测对象数量。
     /// </summary>
     internal long ReceivedCount => this.circularBuffer.AddedCount + this.DroppedCount;
 
     /// <summary>
-    /// Gets the number of telemetry objects processed by the underlying exporter.
+    /// 获取底层导出器处理的遥测对象数量。
     /// </summary>
     internal long ProcessedCount => this.circularBuffer.RemovedCount;
 
@@ -96,10 +111,10 @@ public abstract class BatchExportProcessor<T> : BaseExportProcessor<T>
                 }
             }
 
-            return true; // enqueue succeeded
+            return true; // 入队成功
         }
 
-        // either the queue is full or exceeded the spin limit, drop the item on the floor
+        // 队列已满或超过自旋限制，丢弃该项
         Interlocked.Increment(ref this.droppedCount);
 
         return false;
@@ -119,7 +134,7 @@ public abstract class BatchExportProcessor<T> : BaseExportProcessor<T>
 
         if (head == tail)
         {
-            return true; // nothing to flush
+            return true; // 无需刷新
         }
 
         try
@@ -142,8 +157,8 @@ public abstract class BatchExportProcessor<T> : BaseExportProcessor<T>
             ? null
             : Stopwatch.StartNew();
 
-        // There is a chance that the export thread finished processing all the data from the queue,
-        // and signaled before we enter wait here, use polling to prevent being blocked indefinitely.
+        // 存在导出线程已处理完队列中所有数据并发出信号的可能性，
+        // 使用轮询防止无限期阻塞。
         const int pollingMilliseconds = 1000;
 
         while (true)
@@ -247,7 +262,7 @@ public abstract class BatchExportProcessor<T> : BaseExportProcessor<T>
 
         while (true)
         {
-            // only wait when the queue doesn't have enough items, otherwise keep busy and send data continuously
+            // 仅在队列中没有足够的项时等待，否则保持忙碌并连续发送数据
             if (this.circularBuffer.Count < this.MaxExportBatchSize)
             {
                 try
@@ -256,7 +271,7 @@ public abstract class BatchExportProcessor<T> : BaseExportProcessor<T>
                 }
                 catch (ObjectDisposedException)
                 {
-                    // the exporter is somehow disposed before the worker thread could finish its job
+                    // 导出器在工作线程完成其工作之前已被释放
                     return;
                 }
             }
@@ -275,7 +290,7 @@ public abstract class BatchExportProcessor<T> : BaseExportProcessor<T>
                 }
                 catch (ObjectDisposedException)
                 {
-                    // the exporter is somehow disposed before the worker thread could finish its job
+                    // 导出器在工作线程完成其工作之前已被释放
                     return;
                 }
             }

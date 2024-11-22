@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- OmniSharp/VS Code requires TargetFrameworks to be in descending order for IntelliSense and analysis. -->
+    <TargetFrameworks>$(NetMinimumSupportedVersion)</TargetFrameworks>
+    <Description>Confluent.Kafka instrumentation for OpenTelemetry .NET.</Description>
+    <PackageTags>$(PackageTags);distributed-tracing;Kafka;Confluent.Kafka</PackageTags>
+    <IncludeSharedExceptionExtensionsSource>true</IncludeSharedExceptionExtensionsSource>
+    <MinVerTagPrefix>Instrumentation.ConfluentKafka-</MinVerTagPrefix>
+  </PropertyGroup>
+
+  <!-- Do not run Package Baseline Validation as this package has never released a stable version.
+  Remove this property once we have released a stable version and add PackageValidationBaselineVersion property. -->
+  <PropertyGroup>
+    <DisablePackageBaselineValidation>true</DisablePackageBaselineValidation>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Shared\AssemblyVersionExtensions.cs" Link="Includes\AssemblyVersionExtensions.cs" />
+    <Compile Include="..\Shared\Guard.cs" Link="Includes\Guard.cs" />
+    <Compile Include="..\Shared\PropertyFetcher.AOT.cs" Link="Includes\PropertyFetcher.AOT.cs" />
+    <Compile Include="..\Shared\SemanticConventions.cs" Link="Includes\SemanticConventions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OpenTelemetry.Api.ProviderBuilderExtensions\OpenTelemetry.Api.ProviderBuilderExtensions.csproj" />
+  </ItemGroup>
+
+</Project>

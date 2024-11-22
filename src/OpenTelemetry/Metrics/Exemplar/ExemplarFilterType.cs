@@ -6,44 +6,43 @@ using System.Diagnostics;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Defines the supported exemplar filters.
+/// 定义支持的示例过滤器。
 /// </summary>
 /// <remarks>
-/// Specification: <see
-/// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#exemplarfilter"/>.
+/// 规范：<see
+/// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#exemplarfilter"/>。
 /// </remarks>
 public enum ExemplarFilterType
 {
     /// <summary>
-    /// An exemplar filter which makes no measurements eligible for becoming an
-    /// <see cref="Exemplar"/>.
+    /// 一个示例过滤器，不使任何测量值有资格成为
+    /// <see cref="Exemplar"/>。
     /// </summary>
     /// <remarks>
-    /// <para>Note: Setting <see cref="AlwaysOff"/> on a meter provider
-    /// effectively disables exemplars.</para>
-    /// <para>Specification: <see
-    /// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#alwaysoff"/>.</para>
+    /// <para>注意：在仪表提供程序上设置 <see cref="AlwaysOff"/>
+    /// 实际上禁用了示例。</para>
+    /// <para>规范：<see
+    /// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#alwaysoff"/>。</para>
     /// </remarks>
     AlwaysOff,
 
     /// <summary>
-    /// An exemplar filter which makes all measurements eligible for becoming an
-    /// <see cref="Exemplar"/>.
+    /// 一个示例过滤器，使所有测量值都有资格成为
+    /// <see cref="Exemplar"/>。
     /// </summary>
     /// <remarks>
-    /// Specification: <see
-    /// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#alwayson"/>.
+    /// 规范：<see
+    /// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#alwayson"/>。
     /// </remarks>
     AlwaysOn,
 
     /// <summary>
-    /// An exemplar filter which makes measurements recorded in the context of a
-    /// sampled <see cref="Activity"/> (span) eligible for becoming an <see
-    /// cref="Exemplar"/>.
+    /// 一个示例过滤器，使在采样的 <see cref="Activity"/>（跨度）上下文中记录的测量值有资格成为 <see
+    /// cref="Exemplar"/>。
     /// </summary>
     /// <remarks>
-    /// Specification: <see
-    /// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#tracebased"/>.
+    /// 规范：<see
+    /// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#tracebased"/>。
     /// </remarks>
     TraceBased,
 }

@@ -29,8 +29,10 @@ public class Program
     {
         using var meterProvider = Sdk.CreateMeterProviderBuilder()
             .AddMeter("MyCompany.MyProduct.MyLibrary")
-            .AddReader(new BaseExportingMetricReader(new MyExporter("ExporterX")))
-            .AddMyExporter()
+            .AddReader(new BaseExportingMetricReader(new MyExporter("MyExporter-22222")))
+            //.AddMyExporter()
+            //.AddConsoleExporter()
+            .AddOtlpExporter()
             .Build();
 
         MyFruitCounter.Add(1, new("name", "apple"), new("color", "red"));

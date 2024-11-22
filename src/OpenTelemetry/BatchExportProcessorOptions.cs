@@ -4,29 +4,29 @@
 namespace OpenTelemetry;
 
 /// <summary>
-/// Contains batch export processor options.
+/// 包含批量导出处理器选项。
 /// </summary>
-/// <typeparam name="T">The type of telemetry object to be exported.</typeparam>
+/// <typeparam name="T">要导出的遥测对象的类型。</typeparam>
 public class BatchExportProcessorOptions<T>
     where T : class
 {
     /// <summary>
-    /// Gets or sets the maximum queue size. The queue drops the data if the maximum size is reached. The default value is 2048.
+    /// 获取或设置最大队列大小。如果达到最大大小，队列将丢弃数据。默认值为2048。
     /// </summary>
     public int MaxQueueSize { get; set; } = BatchExportProcessor<T>.DefaultMaxQueueSize;
 
     /// <summary>
-    /// Gets or sets the delay interval (in milliseconds) between two consecutive exports. The default value is 5000.
+    /// 获取或设置两次连续导出之间的延迟间隔（以毫秒为单位）。默认值为5000。
     /// </summary>
     public int ScheduledDelayMilliseconds { get; set; } = BatchExportProcessor<T>.DefaultScheduledDelayMilliseconds;
 
     /// <summary>
-    /// Gets or sets the timeout (in milliseconds) after which the export is cancelled. The default value is 30000.
+    /// 获取或设置导出取消的超时时间（以毫秒为单位）。默认值为30000。
     /// </summary>
     public int ExporterTimeoutMilliseconds { get; set; } = BatchExportProcessor<T>.DefaultExporterTimeoutMilliseconds;
 
     /// <summary>
-    /// Gets or sets the maximum batch size of every export. It must be smaller or equal to MaxQueueLength. The default value is 512.
+    /// 获取或设置每次导出的最大批量大小。它必须小于或等于MaxQueueLength。默认值为512。
     /// </summary>
     public int MaxExportBatchSize { get; set; } = BatchExportProcessor<T>.DefaultMaxExportBatchSize;
 }

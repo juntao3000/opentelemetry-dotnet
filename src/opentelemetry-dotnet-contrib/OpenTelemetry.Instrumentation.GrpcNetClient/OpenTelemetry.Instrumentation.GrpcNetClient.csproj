@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- OmniSharp/VS Code requires TargetFrameworks to be in descending order for IntelliSense and analysis. -->
+    <TargetFrameworks>$(NetMinimumSupportedVersion);netstandard2.1;$(NetStandardMinimumSupportedVersion)</TargetFrameworks>
+    <Description>gRPC for .NET client instrumentation for OpenTelemetry .NET.</Description>
+    <PackageTags>$(PackageTags);distributed-tracing</PackageTags>
+    <MinVerTagPrefix>Instrumentation.GrpcNetClient-</MinVerTagPrefix>
+  </PropertyGroup>
+
+  <!-- Do not run Package Baseline Validation as this package has never released a stable version.
+  Remove this property once we have released a stable version and add PackageValidationBaselineVersion property. -->
+  <PropertyGroup>
+    <DisablePackageBaselineValidation>true</DisablePackageBaselineValidation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\ActivityHelperExtensions.cs" Link="Includes\ActivityHelperExtensions.cs" />
+    <Compile Include="..\Shared\ActivityInstrumentationHelper.cs" Link="Includes\ActivityInstrumentationHelper.cs" />
+    <Compile Include="..\Shared\AssemblyVersionExtensions.cs" Link="Includes\AssemblyVersionExtensions.cs" />
+    <Compile Include="..\Shared\DiagnosticSourceListener.cs" Link="Includes\DiagnosticSourceListener.cs" />
+    <Compile Include="..\Shared\DiagnosticSourceSubscriber.cs" Link="Includes\DiagnosticSourceSubscriber.cs" />
+    <Compile Include="..\Shared\ExceptionExtensions.cs" Link="Includes\ExceptionExtensions.cs" />
+    <Compile Include="..\Shared\GrpcTagHelper.cs" Link="Includes\GrpcTagHelper.cs" />
+    <Compile Include="..\Shared\GrpcStatusCanonicalCode.cs" Link="Includes\GrpcStatusCanonicalCode.cs" />
+    <Compile Include="..\Shared\Guard.cs" Link="Includes\Guard.cs" />
+    <Compile Include="..\Shared\HttpRequestMessageContextPropagation.cs" Link="Includes\HttpRequestMessageContextPropagation.cs" />
+    <Compile Include="..\Shared\ListenerHandler.cs" Link="Includes\ListenerHandler.cs" />
+    <Compile Include="..\Shared\NullableAttributes.cs" Link="Includes\NullableAttributes.cs" />
+    <Compile Include="..\Shared\Options\*.cs" Link="Includes\Options\%(Filename).cs" />
+    <Compile Include="..\Shared\PropertyFetcher.AOT.cs" Link="Includes\PropertyFetcher.AOT.cs" />
+    <Compile Include="..\Shared\SemanticConventions.cs" Link="Includes\SemanticConventions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OpenTelemetry\OpenTelemetry.csproj" />
+  </ItemGroup>
+
+</Project>

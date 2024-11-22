@@ -12,22 +12,33 @@ using OpenTelemetry.Proto.Collector.Trace.V1;
 
 namespace OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Transmission;
 
+// OTLP导出器持久化存储传输处理程序类
 internal sealed class OtlpExporterPersistentStorageTransmissionHandler<TRequest> : OtlpExporterTransmissionHandler<TRequest>, IDisposable
 {
+    // 重试间隔时间（毫秒）
     private const int RetryIntervalInMilliseconds = 60000;
+    // 关闭事件
     private readonly ManualResetEvent shutdownEvent = new(false);
+    // 数据导出通知事件
     private readonly ManualResetEvent dataExportNotification = new(false);
+    // 导出事件
     private readonly AutoResetEvent exportEvent = new(false);
+    // 处理重试的线程
     private readonly Thread thread;
+    // 持久化Blob提供者
     private readonly PersistentBlobProvider persistentBlobProvider;
+    // 请求工厂方法
     private readonly Func<byte[], TRequest> requestFactory;
+    // 是否已释放
     private bool disposed;
 
+    // 构造函数，初始化导出客户端、超时时间、请求工厂和存储路径
     public OtlpExporterPersistentStorageTransmissionHandler(IExportClient<TRequest> exportClient, double timeoutMilliseconds, Func<byte[], TRequest> requestFactory, string storagePath)
         : this(new FileBlobProvider(storagePath), exportClient, timeoutMilliseconds, requestFactory)
     {
     }
 
+    // 内部构造函数，初始化持久化Blob提供者、导出客户端、超时时间和请求工厂
     internal OtlpExporterPersistentStorageTransmissionHandler(PersistentBlobProvider persistentBlobProvider, IExportClient<TRequest> exportClient, double timeoutMilliseconds, Func<byte[], TRequest> requestFactory)
         : base(exportClient, timeoutMilliseconds)
     {
@@ -46,7 +57,7 @@ internal sealed class OtlpExporterPersistentStorageTransmissionHandler<TRequest>
         this.thread.Start();
     }
 
-    // Used for test.
+    // 用于测试，启动并等待重试过程
     internal bool InitiateAndWaitForRetryProcess(int timeOutMilliseconds)
     {
         this.exportEvent.Set();
@@ -54,6 +65,7 @@ internal sealed class OtlpExporterPersistentStorageTransmissionHandler<TRequest>
         return this.dataExportNotification.WaitOne(timeOutMilliseconds);
     }
 
+    // 提交请求失败时触发
     protected override bool OnSubmitRequestFailure(TRequest request, ExportClientResponse response)
     {
         if (RetryHelper.ShouldRetryRequest(response, OtlpRetry.InitialBackoffMilliseconds, out _))
@@ -86,6 +98,7 @@ internal sealed class OtlpExporterPersistentStorageTransmissionHandler<TRequest>
         return false;
     }
 
+    // 关闭传输处理程序时触发
     protected override void OnShutdown(int timeoutMilliseconds)
     {
         var sw = timeoutMilliseconds == Timeout.Infinite ? null : Stopwatch.StartNew();
@@ -113,6 +126,7 @@ internal sealed class OtlpExporterPersistentStorageTransmissionHandler<TRequest>
         }
     }
 
+    // 释放资源
     protected override void Dispose(bool disposing)
     {
         if (!this.disposed)
@@ -129,6 +143,7 @@ internal sealed class OtlpExporterPersistentStorageTransmissionHandler<TRequest>
         }
     }
 
+    // 重试存储的请求
     private void RetryStoredRequests()
     {
         var handles = new WaitHandle[] { this.shutdownEvent, this.exportEvent };
@@ -145,8 +160,8 @@ internal sealed class OtlpExporterPersistentStorageTransmissionHandler<TRequest>
 
                 int fileCount = 0;
 
-                // TODO: Run maintenance job.
-                // Transmit 10 files at a time.
+                // TODO: 运行维护作业。
+                // 每次传输10个文件。
                 while (fileCount < 10 && !this.shutdownEvent.WaitOne(0))
                 {
                     if (!this.persistentBlobProvider.TryGetBlob(out var blob))
@@ -164,14 +179,14 @@ internal sealed class OtlpExporterPersistentStorageTransmissionHandler<TRequest>
                             blob.TryDelete();
                         }
 
-                        // TODO: extend the lease period based on the response from server on retryAfter.
+                        // TODO: 根据服务器的retryAfter响应扩展租赁期。
                     }
 
                     fileCount++;
                 }
 
-                // Set and reset the handle to notify export and wait for next signal.
-                // This is used for InitiateAndWaitForRetryProcess.
+                // 设置并重置句柄以通知导出并等待下一个信号。
+                // 这用于InitiateAndWaitForRetryProcess。
                 this.dataExportNotification.Set();
                 this.dataExportNotification.Reset();
             }

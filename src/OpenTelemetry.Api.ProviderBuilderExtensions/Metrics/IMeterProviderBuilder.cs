@@ -6,32 +6,26 @@ using Microsoft.Extensions.DependencyInjection;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Describes a <see cref="MeterProviderBuilder"/> backed by an <see cref="IServiceCollection"/>.
+/// 描述一个由 <see cref="IServiceCollection"/> 支持的 <see cref="MeterProviderBuilder"/>。
 /// </summary>
-// Note: This API may be made public if there is a need for it.
+// 注意：如果有需要，这个 API 可能会公开。
 internal interface IMeterProviderBuilder : IDeferredMeterProviderBuilder
 {
     /// <summary>
-    /// Gets the <see cref="MeterProvider"/> being constructed by the builder.
+    /// 获取由构建器构建的 <see cref="MeterProvider"/>。
     /// </summary>
     /// <remarks>
-    /// Note: <see cref="Provider"/> should return <see langword="null"/> until
-    /// construction has started and the <see cref="IServiceCollection"/> has
-    /// closed.
+    /// 注意：在构建开始并且 <see cref="IServiceCollection"/> 已关闭之前，<see cref="Provider"/> 应返回 <see langword="null"/>。
     /// </remarks>
     MeterProvider? Provider { get; }
 
     /// <summary>
-    /// Register a callback action to configure the <see
-    /// cref="IServiceCollection"/> where metrics services are configured.
+    /// 注册一个回调操作来配置度量服务配置的 <see cref="IServiceCollection"/>。
     /// </summary>
     /// <remarks>
-    /// Note: Metrics services are only available during the application
-    /// configuration phase. This method should throw a <see
-    /// cref="NotSupportedException"/> if services are configured after the
-    /// application <see cref="IServiceProvider"/> has been created.
+    /// 注意：度量服务仅在应用程序配置阶段可用。如果在应用程序 <see cref="IServiceProvider"/> 创建后配置服务，则此方法应抛出 <see cref="NotSupportedException"/>。
     /// </remarks>
-    /// <param name="configure">Configuration callback.</param>
-    /// <returns>The supplied <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    /// <param name="configure">配置回调。</param>
+    /// <returns>返回 <see cref="MeterProviderBuilder"/> 以便链式调用。</returns>
     MeterProviderBuilder ConfigureServices(Action<IServiceCollection> configure);
 }

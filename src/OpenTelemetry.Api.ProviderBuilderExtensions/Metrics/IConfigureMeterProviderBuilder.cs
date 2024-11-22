@@ -4,13 +4,13 @@
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Represents something that configures the <see cref="MeterProviderBuilder"/> type.
+/// 表示配置 <see cref="MeterProviderBuilder"/> 类型的对象。
 /// </summary>
-// Note: This API may be made public if there is a need for it.
+// 注意：如果有需要，此 API 可能会公开。
 internal interface IConfigureMeterProviderBuilder
 {
     /// <summary>
-    /// Invoked to configure a <see cref="MeterProviderBuilder"/> instance.
+    /// 调用以配置 <see cref="MeterProviderBuilder"/> 实例。
     /// </summary>
     /// <param name="serviceProvider"><see cref="IServiceProvider"/>.</param>
     /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>.</param>

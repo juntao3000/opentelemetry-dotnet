@@ -3,70 +3,71 @@
 
 namespace OpenTelemetry.Metrics;
 
+// AggregationType 枚举定义了不同的聚合类型
 internal enum AggregationType
 {
     /// <summary>
-    /// Invalid.
+    /// 无效。
     /// </summary>
     Invalid = -1,
 
     /// <summary>
-    /// Calculate SUM from incoming delta measurements.
+    /// 从传入的增量测量值计算总和。
     /// </summary>
     LongSumIncomingDelta = 0,
 
     /// <summary>
-    /// Calculate SUM from incoming cumulative measurements.
+    /// 从传入的累积测量值计算总和。
     /// </summary>
     LongSumIncomingCumulative = 1,
 
     /// <summary>
-    /// Calculate SUM from incoming delta measurements.
+    /// 从传入的增量测量值计算总和。
     /// </summary>
     DoubleSumIncomingDelta = 2,
 
     /// <summary>
-    /// Calculate SUM from incoming cumulative measurements.
+    /// 从传入的累积测量值计算总和。
     /// </summary>
     DoubleSumIncomingCumulative = 3,
 
     /// <summary>
-    /// Keep LastValue.
+    /// 保持最后一个值。
     /// </summary>
     LongGauge = 4,
 
     /// <summary>
-    /// Keep LastValue.
+    /// 保持最后一个值。
     /// </summary>
     DoubleGauge = 5,
 
     /// <summary>
-    /// Histogram with sum, count, buckets.
+    /// 具有总和、计数和桶的直方图。
     /// </summary>
     HistogramWithBuckets = 6,
 
     /// <summary>
-    /// Histogram with sum, count, min, max, buckets.
+    /// 具有总和、计数、最小值、最大值和桶的直方图。
     /// </summary>
     HistogramWithMinMaxBuckets = 7,
 
     /// <summary>
-    /// Histogram with sum, count.
+    /// 具有总和和计数的直方图。
     /// </summary>
     Histogram = 8,
 
     /// <summary>
-    /// Histogram with sum, count, min, max.
+    /// 具有总和、计数、最小值和最大值的直方图。
     /// </summary>
     HistogramWithMinMax = 9,
 
     /// <summary>
-    /// Exponential Histogram with sum, count.
+    /// 具有总和和计数的指数直方图。
     /// </summary>
     Base2ExponentialHistogram = 10,
 
     /// <summary>
-    /// Exponential Histogram with sum, count, min, max.
+    /// 具有总和、计数、最小值和最大值的指数直方图。
     /// </summary>
     Base2ExponentialHistogramWithMinMax = 11,
 }

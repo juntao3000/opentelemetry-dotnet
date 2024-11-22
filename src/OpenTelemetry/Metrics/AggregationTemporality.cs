@@ -4,18 +4,17 @@
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Enumeration used to define the aggregation temporality for a <see
-/// cref="Metric"/>.
+/// 枚举，用于定义<see cref="Metric"/>的聚合时间性。
 /// </summary>
 public enum AggregationTemporality : byte
 {
     /// <summary>
-    /// Cumulative.
+    /// 累积的。
     /// </summary>
-    Cumulative = 0b1,
+    Cumulative = 0b1, // 累积的聚合时间性
 
     /// <summary>
-    /// Delta.
+    /// 增量的。
     /// </summary>
-    Delta = 0b10,
+    Delta = 0b10, // 增量的聚合时间性
 }

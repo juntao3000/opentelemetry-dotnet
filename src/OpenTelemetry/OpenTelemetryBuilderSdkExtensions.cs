@@ -12,180 +12,103 @@ using OpenTelemetry.Trace;
 
 namespace OpenTelemetry;
 
-/// <summary>
-/// Contains methods for extending the <see cref="IOpenTelemetryBuilder"/> interface.
-/// </summary>
+// OpenTelemetryBuilderSdkExtensions 类包含扩展 IOpenTelemetryBuilder 接口的方法。
 public static class OpenTelemetryBuilderSdkExtensions
 {
-    /// <summary>
-    /// Registers an action to configure the <see cref="ResourceBuilder"/>s used
-    /// by tracing, metrics, and logging.
-    /// </summary>
-    /// <param name="builder"><see cref="IOpenTelemetryBuilder"/>.</param>
-    /// <remarks>
-    /// Note: This is safe to be called multiple times and by library authors.
-    /// Each registered configuration action will be applied sequentially.
-    /// </remarks>
-    /// <param name="configure"><see cref="ResourceBuilder"/> configuration
-    /// action.</param>
-    /// <returns>The supplied <see cref="IOpenTelemetryBuilder"/> for chaining
-    /// calls.</returns>
+    // ConfigureResource 方法注册一个操作来配置跟踪、指标和日志使用的 ResourceBuilder。
     public static IOpenTelemetryBuilder ConfigureResource(
         this IOpenTelemetryBuilder builder,
         Action<ResourceBuilder> configure)
     {
+        // 检查 builder 是否为 null
         Guard.ThrowIfNull(builder);
+        // 检查 configure 是否为 null
         Guard.ThrowIfNull(configure);
 
+        // 配置 OpenTelemetryMeterProvider
         builder.Services.ConfigureOpenTelemetryMeterProvider(
             builder => builder.ConfigureResource(configure));
 
+        // 配置 OpenTelemetryTracerProvider
         builder.Services.ConfigureOpenTelemetryTracerProvider(
             builder => builder.ConfigureResource(configure));
 
+        // 配置 OpenTelemetryLoggerProvider
         builder.Services.ConfigureOpenTelemetryLoggerProvider(
             builder => builder.ConfigureResource(configure));
 
+        // 返回 builder 以便链式调用
         return builder;
     }
 
-    /// <summary>
-    /// Adds metric services into the builder.
-    /// </summary>
-    /// <param name="builder"><see cref="IOpenTelemetryBuilder"/>.</param>
-    /// <remarks>
-    /// Notes:
-    /// <list type="bullet">
-    /// <item>This is safe to be called multiple times and by library authors.
-    /// Only a single <see cref="MeterProvider"/> will be created for a given
-    /// <see cref="IServiceCollection"/>.</item>
-    /// <item>This method automatically registers an <see
-    /// cref="IMetricsListener"/> named 'OpenTelemetry' into the <see
-    /// cref="IServiceCollection"/>.</item>
-    /// </list>
-    /// </remarks>
-    /// <returns>The supplied <see cref="IOpenTelemetryBuilder"/> for chaining
-    /// calls.</returns>
+    // WithMetrics 方法将指标服务添加到构建器中。
     public static IOpenTelemetryBuilder WithMetrics(
         this IOpenTelemetryBuilder builder)
         => WithMetrics(builder, b => { });
 
-    /// <summary>
-    /// Adds metric services into the builder.
-    /// </summary>
-    /// <remarks><inheritdoc cref="WithMetrics(IOpenTelemetryBuilder)" path="/remarks"/></remarks>
-    /// <param name="builder"><see cref="IOpenTelemetryBuilder"/>.</param>
-    /// <param name="configure"><see cref="MeterProviderBuilder"/>
-    /// configuration callback.</param>
-    /// <returns>The supplied <see cref="IOpenTelemetryBuilder"/> for chaining
-    /// calls.</returns>
+    // WithMetrics 方法将指标服务添加到构建器中，并接受一个配置回调。
     public static IOpenTelemetryBuilder WithMetrics(
         this IOpenTelemetryBuilder builder,
         Action<MeterProviderBuilder> configure)
     {
+        // 注册 MetricsListener
         OpenTelemetryMetricsBuilderExtensions.RegisterMetricsListener(
             builder.Services,
             configure);
 
+        // 返回 builder 以便链式调用
         return builder;
     }
 
-    /// <summary>
-    /// Adds tracing services into the builder.
-    /// </summary>
-    /// <param name="builder"><see cref="IOpenTelemetryBuilder"/>.</param>
-    /// <remarks>
-    /// Note: This is safe to be called multiple times and by library authors.
-    /// Only a single <see cref="TracerProvider"/> will be created for a given
-    /// <see cref="IServiceCollection"/>.
-    /// </remarks>
-    /// <returns>The supplied <see cref="IOpenTelemetryBuilder"/> for chaining
-    /// calls.</returns>
+    // WithTracing 方法将跟踪服务添加到构建器中。
     public static IOpenTelemetryBuilder WithTracing(this IOpenTelemetryBuilder builder)
         => WithTracing(builder, b => { });
 
-    /// <summary>
-    /// Adds tracing services into the builder.
-    /// </summary>
-    /// <remarks><inheritdoc cref="WithTracing(IOpenTelemetryBuilder)" path="/remarks"/></remarks>
-    /// <param name="builder"><see cref="IOpenTelemetryBuilder"/>.</param>
-    /// <param name="configure"><see cref="TracerProviderBuilder"/>
-    /// configuration callback.</param>
-    /// <returns>The supplied <see cref="IOpenTelemetryBuilder"/> for chaining
-    /// calls.</returns>
+    // WithTracing 方法将跟踪服务添加到构建器中，并接受一个配置回调。
     public static IOpenTelemetryBuilder WithTracing(
         this IOpenTelemetryBuilder builder,
         Action<TracerProviderBuilder> configure)
     {
+        // 检查 configure 是否为 null
         Guard.ThrowIfNull(configure);
 
+        // 创建 TracerProviderBuilderBase 实例
         var tracerProviderBuilder = new TracerProviderBuilderBase(builder.Services);
 
+        // 调用配置回调
         configure(tracerProviderBuilder);
 
+        // 返回 builder 以便链式调用
         return builder;
     }
 
-    /// <summary>
-    /// Adds logging services into the builder.
-    /// </summary>
-    /// <param name="builder"><see cref="IOpenTelemetryBuilder"/>.</param>
-    /// <remarks>
-    /// Notes:
-    /// <list type="bullet">
-    /// <item>This is safe to be called multiple times and by library authors.
-    /// Only a single <see cref="LoggerProvider"/> will be created for a given
-    /// <see cref="IServiceCollection"/>.</item>
-    /// <item>This method automatically registers an <see
-    /// cref="ILoggerProvider"/> named 'OpenTelemetry' into the <see
-    /// cref="IServiceCollection"/>.</item>
-    /// </list>
-    /// </remarks>
-    /// <returns>The supplied <see cref="IOpenTelemetryBuilder"/> for chaining
-    /// calls.</returns>
+    // WithLogging 方法将日志服务添加到构建器中。
     public static IOpenTelemetryBuilder WithLogging(this IOpenTelemetryBuilder builder)
         => WithLogging(builder, configureBuilder: null, configureOptions: null);
 
-    /// <summary>
-    /// Adds logging services into the builder.
-    /// </summary>
-    /// <remarks><inheritdoc cref="WithLogging(IOpenTelemetryBuilder)" path="/remarks"/></remarks>
-    /// <param name="builder"><see cref="IOpenTelemetryBuilder"/>.</param>
-    /// <param name="configure"><see cref="LoggerProviderBuilder"/>
-    /// configuration callback.</param>
-    /// <returns>The supplied <see cref="IOpenTelemetryBuilder"/> for chaining
-    /// calls.</returns>
+    // WithLogging 方法将日志服务添加到构建器中，并接受一个配置回调。
     public static IOpenTelemetryBuilder WithLogging(
         this IOpenTelemetryBuilder builder,
         Action<LoggerProviderBuilder> configure)
     {
+        // 检查 configure 是否为 null
         Guard.ThrowIfNull(configure);
 
+        // 调用 WithLogging 方法
         return WithLogging(builder, configureBuilder: configure, configureOptions: null);
     }
 
-    /// <summary>
-    /// Adds logging services into the builder.
-    /// </summary>
-    /// <remarks><inheritdoc cref="WithLogging(IOpenTelemetryBuilder)" path="/remarks"/></remarks>
-    /// <param name="builder"><see cref="IOpenTelemetryBuilder"/>.</param>
-    /// <param name="configureBuilder">Optional <see
-    /// cref="LoggerProviderBuilder"/> configuration callback.</param>
-    /// <param name="configureOptions">Optional <see
-    /// cref="OpenTelemetryLoggerOptions"/> configuration callback. <see
-    /// cref="OpenTelemetryLoggerOptions"/> are used by the <see
-    /// cref="ILoggerProvider"/> named 'OpenTelemetry' automatically registered
-    /// by this method.</param>
-    /// <returns>The supplied <see cref="IOpenTelemetryBuilder"/> for chaining
-    /// calls.</returns>
+    // WithLogging 方法将日志服务添加到构建器中，并接受两个可选的配置回调。
     public static IOpenTelemetryBuilder WithLogging(
         this IOpenTelemetryBuilder builder,
         Action<LoggerProviderBuilder>? configureBuilder,
         Action<OpenTelemetryLoggerOptions>? configureOptions)
     {
+        // 添加 OpenTelemetry 日志提供程序
         builder.Services.AddLogging(
             logging => logging.UseOpenTelemetry(configureBuilder, configureOptions));
 
+        // 返回 builder 以便链式调用
         return builder;
     }
 }

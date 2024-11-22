@@ -7,19 +7,22 @@ using OpenTelemetry.Context;
 namespace OpenTelemetry;
 
 /// <summary>
-/// Contains methods managing instrumentation of internal operations.
+/// 包含管理内部操作的检测方法。
 /// </summary>
 public sealed class SuppressInstrumentationScope : IDisposable
 {
-    // An integer value which controls whether instrumentation should be suppressed (disabled).
-    // * null: instrumentation is not suppressed
-    // * Depth = [int.MinValue, -1]: instrumentation is always suppressed
-    // * Depth = [1, int.MaxValue]: instrumentation is suppressed in a reference-counting mode
+    // 一个整数值，用于控制是否应禁止（禁用）检测。
+    // * null: 不禁止检测
+    // * Depth = [int.MinValue, -1]: 始终禁止检测
+    // * Depth = [1, int.MaxValue]: 在引用计数模式下禁止检测
     private static readonly RuntimeContextSlot<SuppressInstrumentationScope?> Slot = RuntimeContext.RegisterSlot<SuppressInstrumentationScope?>("otel.suppress_instrumentation");
 
+    // 保存前一个检测范围的引用
     private readonly SuppressInstrumentationScope? previousScope;
+    // 标识对象是否已释放
     private bool disposed;
 
+    // 构造函数，初始化检测范围
     internal SuppressInstrumentationScope(bool value = true)
     {
         this.previousScope = Slot.Get();
@@ -27,18 +30,19 @@ public sealed class SuppressInstrumentationScope : IDisposable
         Slot.Set(this);
     }
 
+    // 检查当前是否禁止检测
     internal static bool IsSuppressed => (Slot.Get()?.Depth ?? 0) != 0;
 
+    // 当前检测范围的深度
     internal int Depth { get; private set; }
 
     /// <summary>
-    /// Begins a new scope in which instrumentation is suppressed (disabled).
+    /// 开始一个新的范围，在该范围内禁止检测。
     /// </summary>
-    /// <param name="value">Value indicating whether to suppress instrumentation.</param>
-    /// <returns>Object to dispose to end the scope.</returns>
+    /// <param name="value">指示是否禁止检测的值。</param>
+    /// <returns>对象以结束范围。</returns>
     /// <remarks>
-    /// This is typically used to prevent infinite loops created by
-    /// collection of internal operations, such as exporting traces over HTTP.
+    /// 这通常用于防止由收集内部操作（如通过 HTTP 导出跟踪）创建的无限循环。
     /// <code>
     ///     public override async Task&lt;ExportResult&gt; ExportAsync(
     ///         IEnumerable&lt;Activity&gt; batch,
@@ -46,10 +50,10 @@ public sealed class SuppressInstrumentationScope : IDisposable
     ///     {
     ///         using (SuppressInstrumentationScope.Begin())
     ///         {
-    ///             // Instrumentation is suppressed (i.e., Sdk.SuppressInstrumentation == true)
+    ///             // 检测被禁止（即 Sdk.SuppressInstrumentation == true）
     ///         }
     ///
-    ///         // Instrumentation is not suppressed (i.e., Sdk.SuppressInstrumentation == false)
+    ///         // 检测未被禁止（即 Sdk.SuppressInstrumentation == false）
     ///     }
     /// </code>
     /// </remarks>
@@ -59,12 +63,12 @@ public sealed class SuppressInstrumentationScope : IDisposable
     }
 
     /// <summary>
-    /// Enters suppression mode.
-    /// If suppression mode is enabled (slot.Depth is a negative integer), do nothing.
-    /// If suppression mode is not enabled (slot is null), enter reference-counting suppression mode.
-    /// If suppression mode is enabled (slot.Depth is a positive integer), increment the ref count.
+    /// 进入禁止模式。
+    /// 如果禁止模式已启用（slot.Depth 是负整数），则不执行任何操作。
+    /// 如果禁止模式未启用（slot 为 null），则进入引用计数禁止模式。
+    /// 如果禁止模式已启用（slot.Depth 是正整数），则增加引用计数。
     /// </summary>
-    /// <returns>The updated suppression slot value.</returns>
+    /// <returns>更新后的禁止槽值。</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int Enter()
     {
@@ -101,6 +105,10 @@ public sealed class SuppressInstrumentationScope : IDisposable
         }
     }
 
+    /// <summary>
+    /// 如果触发则增加深度。
+    /// </summary>
+    /// <returns>更新后的深度值。</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int IncrementIfTriggered()
     {
@@ -121,6 +129,10 @@ public sealed class SuppressInstrumentationScope : IDisposable
         return currentDepth;
     }
 
+    /// <summary>
+    /// 如果触发则减少深度。
+    /// </summary>
+    /// <returns>更新后的深度值。</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int DecrementIfTriggered()
     {

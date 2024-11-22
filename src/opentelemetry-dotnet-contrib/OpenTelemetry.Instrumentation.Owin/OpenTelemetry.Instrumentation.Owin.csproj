@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>$(NetFrameworkMinimumSupportedVersion)</TargetFrameworks>
+    <Description>OpenTelemetry instrumentation for OWIN.</Description>
+    <PackageTags>$(PackageTags);distributed-tracing;OWIN</PackageTags>
+    <MinVerTagPrefix>Instrumentation.Owin-</MinVerTagPrefix>
+  </PropertyGroup>
+
+  <!-- Do not run Package Baseline Validation as this package has never released a stable version.
+  Remove this property once we have released a stable version and add PackageValidationBaselineVersion property. -->
+  <PropertyGroup>
+    <DisablePackageBaselineValidation>true</DisablePackageBaselineValidation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\AssemblyVersionExtensions.cs" Link="Includes\AssemblyVersionExtensions.cs" />
+    <Compile Include="..\Shared\Configuration\*.cs" Link="Includes\Configuration\%(Filename).cs" />
+    <Compile Include="..\Shared\EnvironmentVariables\*.cs" Link="Includes\EnvironmentVariables\%(Filename).cs" />
+    <Compile Include="..\Shared\ExceptionExtensions.cs" Link="Includes\ExceptionExtensions.cs" />
+    <Compile Include="..\Shared\Guard.cs" Link="Includes\Guard.cs" />
+    <Compile Include="..\Shared\Options\*.cs" Link="Includes\Options\%(Filename).cs" />
+    <Compile Include="..\Shared\RedactionHelper.cs" Link="Includes\RedactionHelper.cs" />
+    <Compile Include="..\Shared\RequestDataHelper.cs" Link="Includes\RequestDataHelper.cs" />
+    <Compile Include="..\Shared\SemanticConventions.cs" Link="Includes\SemanticConventions.cs"/>
+    <Compile Include="..\Shared\SpanHelper.cs" Link="Includes\SpanHelper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Api.ProviderBuilderExtensions" Version="$(OpenTelemetryCoreLatestVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="$(MicrosoftExtensionsConfigurationPkgVer)" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="$(MicrosoftExtensionsOptionsPkgVer)" />
+    <PackageReference Include="Microsoft.Owin" Version="$(MicrosoftOwinPkgVer)" />
+  </ItemGroup>
+
+</Project>

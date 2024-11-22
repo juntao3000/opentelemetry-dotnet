@@ -4,13 +4,12 @@
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Stores configuration for a histogram MetricStream.
+/// 存储直方图 MetricStream 的配置。
 /// </summary>
 public class HistogramConfiguration : MetricStreamConfiguration
 {
     /// <summary>
-    /// Gets or sets a value indicating whether Min, Max
-    /// should be collected.
+    /// 获取或设置一个值，该值指示是否应收集最小值和最大值。
     /// </summary>
-    public bool RecordMinMax { get; set; } = true;
+    public bool RecordMinMax { get; set; } = true; // 是否记录最小值和最大值，默认为 true
 }

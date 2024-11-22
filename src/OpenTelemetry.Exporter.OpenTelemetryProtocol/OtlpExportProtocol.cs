@@ -4,17 +4,17 @@
 namespace OpenTelemetry.Exporter;
 
 /// <summary>
-/// Supported by OTLP exporter protocol types according to the specification https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md.
+/// OTLP导出器协议类型，根据规范https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md。
 /// </summary>
 public enum OtlpExportProtocol : byte
 {
     /// <summary>
-    /// OTLP over gRPC (corresponds to 'grpc' Protocol configuration option). Used as default.
+    /// OTLP通过gRPC（对应于'grpc'协议配置选项）。用作默认值。
     /// </summary>
     Grpc = 0,
 
     /// <summary>
-    /// OTLP over HTTP with protobuf payloads (corresponds to 'http/protobuf' Protocol configuration option).
+    /// OTLP通过HTTP和protobuf负载（对应于'http/protobuf'协议配置选项）。
     /// </summary>
     HttpProtobuf = 1,
 }

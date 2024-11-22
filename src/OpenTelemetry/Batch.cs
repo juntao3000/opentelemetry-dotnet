@@ -10,22 +10,26 @@ using OpenTelemetry.Logs;
 namespace OpenTelemetry;
 
 /// <summary>
-/// Stores a batch of completed <typeparamref name="T"/> objects to be exported.
+/// 存储一批已完成的 <typeparamref name="T"/> 对象以供导出。
 /// </summary>
-/// <typeparam name="T">The type of object in the <see cref="Batch{T}"/>.</typeparam>
+/// <typeparam name="T"> <see cref="Batch{T}"/> 中对象的类型。</typeparam>
 public readonly struct Batch<T> : IDisposable
     where T : class
 {
+    // 单个项目
     private readonly T? item = null;
+    // 环形缓冲区
     private readonly CircularBuffer<T>? circularBuffer = null;
+    // 项目数组
     private readonly T[]? items = null;
+    // 目标计数
     private readonly long targetCount;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Batch{T}"/> struct.
+    /// 初始化 <see cref="Batch{T}"/> 结构的新实例。
     /// </summary>
-    /// <param name="items">The items to store in the batch.</param>
-    /// <param name="count">The number of items in the batch.</param>
+    /// <param name="items">要存储在批次中的项目。</param>
+    /// <param name="count">批次中的项目数。</param>
     public Batch(T[] items, int count)
     {
         Guard.ThrowIfNull(items);
@@ -36,9 +40,9 @@ public readonly struct Batch<T> : IDisposable
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Batch{T}"/> struct.
+    /// 初始化 <see cref="Batch{T}"/> 结构的新实例。
     /// </summary>
-    /// <param name="item">The item to store in the batch.</param>
+    /// <param name="item">要存储在批次中的项目。</param>
     public Batch(T item)
     {
         Guard.ThrowIfNull(item);
@@ -49,18 +53,19 @@ public readonly struct Batch<T> : IDisposable
 
     internal Batch(CircularBuffer<T> circularBuffer, int maxSize)
     {
-        Debug.Assert(maxSize > 0, $"{nameof(maxSize)} should be a positive number.");
-        Debug.Assert(circularBuffer != null, $"{nameof(circularBuffer)} was null.");
+        Debug.Assert(maxSize > 0, $"{nameof(maxSize)} 应该是一个正数。");
+        Debug.Assert(circularBuffer != null, $"{nameof(circularBuffer)} 为空。");
 
         this.circularBuffer = circularBuffer;
         this.Count = Math.Min(maxSize, circularBuffer!.Count);
         this.targetCount = circularBuffer.RemovedCount + this.Count;
     }
 
+    // 批次枚举器移动下一个函数委托
     private delegate bool BatchEnumeratorMoveNextFunc(ref Enumerator enumerator);
 
     /// <summary>
-    /// Gets the count of items in the batch.
+    /// 获取批次中的项目数。
     /// </summary>
     public long Count { get; }
 
@@ -69,7 +74,7 @@ public readonly struct Batch<T> : IDisposable
     {
         if (this.circularBuffer != null)
         {
-            // Drain anything left in the batch.
+            // 清空批次中剩余的任何内容。
             while (this.circularBuffer.RemovedCount < this.targetCount)
             {
                 T item = this.circularBuffer.Read();
@@ -86,24 +91,25 @@ public readonly struct Batch<T> : IDisposable
     }
 
     /// <summary>
-    /// Returns an enumerator that iterates through the <see cref="Batch{T}"/>.
+    /// 返回一个枚举器，该枚举器可遍历 <see cref="Batch{T}"/>。
     /// </summary>
-    /// <returns><see cref="Enumerator"/>.</returns>
+    /// <returns><see cref="Enumerator"/>。</returns>
     public Enumerator GetEnumerator()
     {
         return this.circularBuffer != null
             ? new Enumerator(this.circularBuffer, this.targetCount)
             : this.item != null
                 ? new Enumerator(this.item)
-                /* In the event someone uses default/new Batch() to create Batch we fallback to empty items mode. */
+                /* 如果有人使用 default/new Batch() 创建 Batch，我们会回退到空项目模式。 */
                 : new Enumerator(this.items ?? Array.Empty<T>(), this.targetCount);
     }
 
     /// <summary>
-    /// Enumerates the elements of a <see cref="Batch{T}"/>.
+    /// 枚举 <see cref="Batch{T}"/> 的元素。
     /// </summary>
     public struct Enumerator : IEnumerator<T>
     {
+        // 单个项目的移动下一个函数
         private static readonly BatchEnumeratorMoveNextFunc MoveNextSingleItem = (ref Enumerator enumerator) =>
         {
             if (enumerator.targetCount >= 0)
@@ -116,6 +122,7 @@ public readonly struct Batch<T> : IDisposable
             return true;
         };
 
+        // 环形缓冲区的移动下一个函数
         private static readonly BatchEnumeratorMoveNextFunc MoveNextCircularBuffer = (ref Enumerator enumerator) =>
         {
             var circularBuffer = enumerator.circularBuffer;
@@ -130,10 +137,10 @@ public readonly struct Batch<T> : IDisposable
             return false;
         };
 
+        // 环形缓冲区日志记录的移动下一个函数
         private static readonly BatchEnumeratorMoveNextFunc MoveNextCircularBufferLogRecord = (ref Enumerator enumerator) =>
         {
-            // Note: This type check here is to give the JIT a hint it can
-            // remove all of this code when T != LogRecord
+            // 注意：此处的类型检查是为了给 JIT 提示，当 T != LogRecord 时可以删除所有这些代码
             if (typeof(T) == typeof(LogRecord))
             {
                 var circularBuffer = enumerator.circularBuffer;
@@ -161,6 +168,7 @@ public readonly struct Batch<T> : IDisposable
             return false;
         };
 
+        // 数组的移动下一个函数
         private static readonly BatchEnumeratorMoveNextFunc MoveNextArray = (ref Enumerator enumerator) =>
         {
             var items = enumerator.items;
@@ -175,11 +183,17 @@ public readonly struct Batch<T> : IDisposable
             return false;
         };
 
+        // 环形缓冲区
         private readonly CircularBuffer<T>? circularBuffer;
+        // 项目数组
         private readonly T[]? items;
+        // 移动下一个函数
         private readonly BatchEnumeratorMoveNextFunc moveNextFunc;
+        // 目标计数
         private long targetCount;
+        // 项目索引
         private int itemIndex;
+        // 当前项目
         [AllowNull]
         private T current;
 

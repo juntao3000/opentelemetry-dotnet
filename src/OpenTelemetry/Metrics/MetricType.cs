@@ -4,72 +4,72 @@
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Enumeration used to define the type of a <see cref="Metric"/>.
+/// 枚举用于定义<see cref="Metric"/>的类型。
 /// </summary>
 [Flags]
 public enum MetricType : byte
 {
     /*
-    Type:
-        0x10: Sum
-        0x20: Gauge
-        0x30: Summary (reserved)
-        0x40: Histogram
-        0x50: ExponentialHistogram
-        0x60: (unused)
-        0x70: (unused)
-        0x80: SumNonMonotonic
+    类型:
+        0x10: Sum (求和)
+        0x20: Gauge (测量)
+        0x30: Summary (保留)
+        0x40: Histogram (直方图)
+        0x50: ExponentialHistogram (指数直方图)
+        0x60: (未使用)
+        0x70: (未使用)
+        0x80: SumNonMonotonic (非单调求和)
 
-    Point kind:
-        0x04: I1 (signed 1-byte integer)
-        0x05: U1 (unsigned 1-byte integer)
-        0x06: I2 (signed 2-byte integer)
-        0x07: U2 (unsigned 2-byte integer)
-        0x08: I4 (signed 4-byte integer)
-        0x09: U4 (unsigned 4-byte integer)
-        0x0a: I8 (signed 8-byte integer)
-        0x0b: U8 (unsigned 8-byte integer)
-        0x0c: R4 (4-byte floating point)
-        0x0d: R8 (8-byte floating point)
+    点类型:
+        0x04: I1 (有符号1字节整数)
+        0x05: U1 (无符号1字节整数)
+        0x06: I2 (有符号2字节整数)
+        0x07: U2 (无符号2字节整数)
+        0x08: I4 (有符号4字节整数)
+        0x09: U4 (无符号4字节整数)
+        0x0a: I8 (有符号8字节整数)
+        0x0b: U8 (无符号8字节整数)
+        0x0c: R4 (4字节浮点数)
+        0x0d: R8 (8字节浮点数)
     */
 
     /// <summary>
-    /// Sum of Long type.
+    /// Long类型的求和。
     /// </summary>
     LongSum = 0x1a,
 
     /// <summary>
-    /// Sum of Double type.
+    /// Double类型的求和。
     /// </summary>
     DoubleSum = 0x1d,
 
     /// <summary>
-    /// Gauge of Long type.
+    /// Long类型的测量。
     /// </summary>
     LongGauge = 0x2a,
 
     /// <summary>
-    /// Gauge of Double type.
+    /// Double类型的测量。
     /// </summary>
     DoubleGauge = 0x2d,
 
     /// <summary>
-    /// Histogram.
+    /// 直方图。
     /// </summary>
     Histogram = 0x40,
 
     /// <summary>
-    /// Exponential Histogram.
+    /// 指数直方图。
     /// </summary>
     ExponentialHistogram = 0x50,
 
     /// <summary>
-    /// Non-monotonic Sum of Long type.
+    /// Long类型的非单调求和。
     /// </summary>
     LongSumNonMonotonic = 0x8a,
 
     /// <summary>
-    /// Non-monotonic Sum of Double type.
+    /// Double类型的非单调求和。
     /// </summary>
     DoubleSumNonMonotonic = 0x8d,
 }

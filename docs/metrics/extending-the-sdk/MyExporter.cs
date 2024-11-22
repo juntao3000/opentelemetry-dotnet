@@ -9,7 +9,7 @@ internal class MyExporter : BaseExporter<Metric>
 {
     private readonly string name;
 
-    public MyExporter(string name = "MyExporter")
+    public MyExporter(string name = "MyExporter-11111")
     {
         this.name = name;
     }

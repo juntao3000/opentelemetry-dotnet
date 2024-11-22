@@ -14,35 +14,35 @@ using OpenTelemetry.Trace;
 
 namespace OpenTelemetry.Exporter;
 
-/// <summary>
-/// OpenTelemetry Protocol (OTLP) exporter options.
-/// </summary>
-/// <remarks>
-/// Note: OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS,
-/// OTEL_EXPORTER_OTLP_TIMEOUT, and OTEL_EXPORTER_OTLP_PROTOCOL environment
-/// variables are parsed during object construction.
-/// </remarks>
+// OpenTelemetry 协议 (OTLP) 导出器选项。
 public class OtlpExporterOptions : IOtlpExporterOptions
 {
+    // 默认的 gRPC 端点
     internal const string DefaultGrpcEndpoint = "http://localhost:4317";
+    // 默认的 HTTP 端点
     internal const string DefaultHttpEndpoint = "http://localhost:4318";
+    // 默认的 OTLP 导出协议
     internal const OtlpExportProtocol DefaultOtlpExportProtocol = OtlpExportProtocol.Grpc;
 
+    // 标准请求头
     internal static readonly KeyValuePair<string, string>[] StandardHeaders = new KeyValuePair<string, string>[]
     {
         new("User-Agent", GetUserAgentString()),
     };
 
+    // 默认的 HttpClient 工厂方法
     internal readonly Func<HttpClient> DefaultHttpClientFactory;
 
+    // OTLP 导出协议
     private OtlpExportProtocol? protocol;
+    // 端点 URI
     private Uri? endpoint;
+    // 超时时间（毫秒）
     private int? timeoutMilliseconds;
+    // HttpClient 工厂方法
     private Func<HttpClient>? httpClientFactory;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OtlpExporterOptions"/> class.
-    /// </summary>
+    // 初始化 OtlpExporterOptions 类的新实例。
     public OtlpExporterOptions()
         : this(OtlpExporterOptionsConfigurationType.Default)
     {
@@ -77,7 +77,7 @@ public class OtlpExporterOptions : IOtlpExporterOptions
         this.BatchExportProcessorOptions = defaultBatchOptions!;
     }
 
-    /// <inheritdoc/>
+    // 获取或设置导出器的端点 URI。
     public Uri Endpoint
     {
         get
@@ -101,36 +101,30 @@ public class OtlpExporterOptions : IOtlpExporterOptions
         }
     }
 
-    /// <inheritdoc/>
+    // 获取或设置连接的可选请求头。
     public string? Headers { get; set; }
 
-    /// <inheritdoc/>
+    // 获取或设置后端处理每个批次的最大等待时间（毫秒）。
     public int TimeoutMilliseconds
     {
         get => this.timeoutMilliseconds ?? 10000;
         set => this.timeoutMilliseconds = value;
     }
 
-    /// <inheritdoc/>
+    // 获取或设置 OTLP 传输协议。
     public OtlpExportProtocol Protocol
     {
         get => this.protocol ?? DefaultOtlpExportProtocol;
         set => this.protocol = value;
     }
 
-    /// <summary>
-    /// Gets or sets the export processor type to be used with the OpenTelemetry Protocol Exporter. The default value is <see cref="ExportProcessorType.Batch"/>.
-    /// </summary>
-    /// <remarks>Note: This only applies when exporting traces.</remarks>
+    // 获取或设置要与 OpenTelemetry 协议导出器一起使用的导出处理器类型。默认值为 Batch。
     public ExportProcessorType ExportProcessorType { get; set; } = ExportProcessorType.Batch;
 
-    /// <summary>
-    /// Gets or sets the BatchExportProcessor options. Ignored unless ExportProcessorType is Batch.
-    /// </summary>
-    /// <remarks>Note: This only applies when exporting traces.</remarks>
+    // 获取或设置 BatchExportProcessor 选项。除非 ExportProcessorType 为 Batch，否则忽略。
     public BatchExportProcessorOptions<Activity> BatchExportProcessorOptions { get; set; }
 
-    /// <inheritdoc/>
+    // 获取或设置用于创建 HttpClient 实例的工厂函数。
     public Func<HttpClient> HttpClientFactory
     {
         get => this.httpClientFactory ?? this.DefaultHttpClientFactory;
@@ -142,22 +136,17 @@ public class OtlpExporterOptions : IOtlpExporterOptions
         }
     }
 
-    /// <summary>
-    /// Gets a value indicating whether or not the signal-specific path should
-    /// be appended to <see cref="Endpoint"/>.
-    /// </summary>
-    /// <remarks>
-    /// Note: Only applicable when <see cref="OtlpExportProtocol.HttpProtobuf"/>
-    /// is used.
-    /// </remarks>
+    // 获取一个值，该值指示是否应将信号特定路径附加到 Endpoint。
     internal bool AppendSignalPathToEndpoint { get; private set; } = true;
 
+    // 检查是否有数据
     internal bool HasData
         => this.protocol.HasValue
         || this.endpoint != null
         || this.timeoutMilliseconds.HasValue
         || this.httpClientFactory != null;
 
+    // 创建 OtlpExporterOptions 实例
     internal static OtlpExporterOptions CreateOtlpExporterOptions(
         IServiceProvider serviceProvider,
         IConfiguration configuration,
@@ -167,6 +156,7 @@ public class OtlpExporterOptions : IOtlpExporterOptions
             OtlpExporterOptionsConfigurationType.Default,
             serviceProvider.GetRequiredService<IOptionsMonitor<BatchExportActivityProcessorOptions>>().Get(name));
 
+    // 使用规范环境变量应用配置
     internal void ApplyConfigurationUsingSpecificationEnvVars(
         IConfiguration configuration,
         string endpointEnvVarKey,
@@ -201,15 +191,14 @@ public class OtlpExporterOptions : IOtlpExporterOptions
         }
     }
 
+    // 应用默认配置
     internal OtlpExporterOptions ApplyDefaults(OtlpExporterOptions defaultExporterOptions)
     {
         this.protocol ??= defaultExporterOptions.protocol;
 
         this.endpoint ??= defaultExporterOptions.endpoint;
 
-        // Note: We leave AppendSignalPathToEndpoint set to true here because we
-        // want to append the signal if the endpoint came from the default
-        // endpoint.
+        // 注意：我们在这里将 AppendSignalPathToEndpoint 设置为 true，因为我们希望在端点来自默认端点时附加信号。
 
         this.Headers ??= defaultExporterOptions.Headers;
 
@@ -220,22 +209,21 @@ public class OtlpExporterOptions : IOtlpExporterOptions
         return this;
     }
 
+    // 获取 User-Agent 字符串
     private static string GetUserAgentString()
     {
         var assembly = typeof(OtlpExporterOptions).Assembly;
         return $"OTel-OTLP-Exporter-Dotnet/{assembly.GetPackageVersion()}";
     }
 
+    // 应用配置
     private void ApplyConfiguration(
         IConfiguration configuration,
         OtlpExporterOptionsConfigurationType configurationType)
     {
         Debug.Assert(configuration != null, "configuration was null");
 
-        // Note: When using the "AddOtlpExporter" extensions configurationType
-        // never has a value other than "Default" because OtlpExporterOptions is
-        // shared by all signals and there is no way to differentiate which
-        // signal is being constructed.
+        // 注意：使用 "AddOtlpExporter" 扩展时，configurationType 从未有其他值，因为 OtlpExporterOptions 由所有信号共享，无法区分正在构建哪个信号。
         if (configurationType == OtlpExporterOptionsConfigurationType.Default)
         {
             this.ApplyConfigurationUsingSpecificationEnvVars(

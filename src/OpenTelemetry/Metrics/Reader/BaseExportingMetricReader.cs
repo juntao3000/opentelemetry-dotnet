@@ -7,48 +7,60 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// MetricReader implementation which exports metrics to the configured
-/// MetricExporter upon <see cref="MetricReader.Collect(int)"/>.
+/// MetricReader 实现类，在 <see cref="MetricReader.Collect(int)"/> 时将度量导出到配置的 MetricExporter。
 /// </summary>
 public class BaseExportingMetricReader : MetricReader
 {
     /// <summary>
-    /// Gets the exporter used by the metric reader.
+    /// 获取度量读取器使用的导出器。
     /// </summary>
-    protected readonly BaseExporter<Metric> exporter;
+    protected readonly BaseExporter<Metric> exporter; // 导出器实例
 
+    // 支持的导出模式，默认为 Push 和 Pull 模式
     private readonly ExportModes supportedExportModes = ExportModes.Push | ExportModes.Pull;
+    // 导出调用消息
     private readonly string exportCalledMessage;
+    // 导出成功消息
     private readonly string exportSucceededMessage;
+    // 导出失败消息
     private readonly string exportFailedMessage;
+    // 是否已释放
     private bool disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BaseExportingMetricReader"/> class.
+    /// 构造函数，初始化 BaseExportingMetricReader 实例。
     /// </summary>
-    /// <param name="exporter">Exporter instance to export Metrics to.</param>
+    /// <param name="exporter">用于导出度量的导出器实例。</param>
     public BaseExportingMetricReader(BaseExporter<Metric> exporter)
     {
+        // 检查导出器是否为 null
         Guard.ThrowIfNull(exporter);
 
+        // 将导出器实例赋值给类的成员变量
         this.exporter = exporter;
 
+        // 获取导出器的类型
         var exporterType = exporter.GetType();
+        // 获取导出器类型上的 ExportModesAttribute 特性
         var attributes = exporterType.GetCustomAttributes(typeof(ExportModesAttribute), true);
         if (attributes.Length > 0)
         {
+            // 如果存在 ExportModesAttribute 特性，则获取其支持的导出模式
             var attr = (ExportModesAttribute)attributes[attributes.Length - 1];
             this.supportedExportModes = attr.Supported;
         }
 
+        // 如果导出器实现了 IPullMetricExporter 接口
         if (exporter is IPullMetricExporter pullExporter)
         {
+            // 如果支持 Push 模式，则将 Collect 方法赋值给 pullExporter.Collect
             if (this.supportedExportModes.HasFlag(ExportModes.Push))
             {
                 pullExporter.Collect = this.Collect;
             }
             else
             {
+                // 否则，使用 PullMetricScope 包装 Collect 方法
                 pullExporter.Collect = (timeoutMilliseconds) =>
                 {
                     using (PullMetricScope.Begin())
@@ -59,28 +71,38 @@ public class BaseExportingMetricReader : MetricReader
             }
         }
 
-        this.exportCalledMessage = $"{nameof(BaseExportingMetricReader)} calling {this.Exporter}.{nameof(this.Exporter.Export)} method.";
-        this.exportSucceededMessage = $"{this.Exporter}.{nameof(this.Exporter.Export)} succeeded.";
-        this.exportFailedMessage = $"{this.Exporter}.{nameof(this.Exporter.Export)} failed.";
+        // 初始化导出调用、成功和失败的消息
+        this.exportCalledMessage = $"{nameof(BaseExportingMetricReader)} 调用 {this.Exporter}.{nameof(this.Exporter.Export)} 方法。";
+        this.exportSucceededMessage = $"{this.Exporter}.{nameof(this.Exporter.Export)} 成功。";
+        this.exportFailedMessage = $"{this.Exporter}.{nameof(this.Exporter.Export)} 失败。";
     }
 
-    internal BaseExporter<Metric> Exporter => this.exporter;
+    internal BaseExporter<Metric> Exporter => this.exporter; // 获取导出器实例
 
     /// <summary>
-    /// Gets the supported <see cref="ExportModes"/>.
+    /// 获取支持的 <see cref="ExportModes"/>。
     /// </summary>
-    protected ExportModes SupportedExportModes => this.supportedExportModes;
+    protected ExportModes SupportedExportModes => this.supportedExportModes; // 获取支持的导出模式
 
+    /// <summary>
+    /// 设置父提供者。
+    /// </summary>
+    /// <param name="parentProvider">父提供者实例。</param>
     internal override void SetParentProvider(BaseProvider parentProvider)
     {
         base.SetParentProvider(parentProvider);
         this.exporter.ParentProvider = parentProvider;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 处理度量数据。
+    /// </summary>
+    /// <param name="metrics">度量数据批次。</param>
+    /// <param name="timeoutMilliseconds">超时时间（毫秒）。</param>
+    /// <returns>处理成功返回 true，否则返回 false。</returns>
     internal override bool ProcessMetrics(in Batch<Metric> metrics, int timeoutMilliseconds)
     {
-        // TODO: Do we need to consider timeout here?
+        // TODO: 这里是否需要考虑超时？
         try
         {
             OpenTelemetrySdkEventSource.Log.MetricReaderEvent(this.exportCalledMessage);
@@ -103,7 +125,11 @@ public class BaseExportingMetricReader : MetricReader
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 收集度量数据。
+    /// </summary>
+    /// <param name="timeoutMilliseconds">超时时间（毫秒）。</param>
+    /// <returns>收集成功返回 true，否则返回 false。</returns>
     protected override bool OnCollect(int timeoutMilliseconds)
     {
         if (this.supportedExportModes.HasFlag(ExportModes.Push))
@@ -116,11 +142,15 @@ public class BaseExportingMetricReader : MetricReader
             return base.OnCollect(timeoutMilliseconds);
         }
 
-        // TODO: add some error log
+        // TODO: 添加一些错误日志
         return false;
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// 关闭度量读取器。
+    /// </summary>
+    /// <param name="timeoutMilliseconds">超时时间（毫秒）。</param>
+    /// <returns>关闭成功返回 true，否则返回 false。</returns>
     protected override bool OnShutdown(int timeoutMilliseconds)
     {
         var result = true;
@@ -141,7 +171,10 @@ public class BaseExportingMetricReader : MetricReader
         return result;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// 释放资源。
+    /// </summary>
+    /// <param name="disposing">是否释放托管资源。</param>
     protected override void Dispose(bool disposing)
     {
         if (!this.disposed)

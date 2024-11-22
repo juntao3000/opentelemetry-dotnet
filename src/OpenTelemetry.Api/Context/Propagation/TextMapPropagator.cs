@@ -4,35 +4,34 @@
 namespace OpenTelemetry.Context.Propagation;
 
 /// <summary>
-/// Defines an interface for a Propagator of TextMap type,
-/// which uses string key/value pairs to inject and extract
-/// propagation data.
+/// 定义了一个 TextMap 类型的 Propagator 接口，
+/// 使用字符串键/值对来注入和提取传播数据。
 /// </summary>
 public abstract class TextMapPropagator
 {
     /// <summary>
-    /// Gets the list of headers used by propagator. The use cases of this are:
-    ///   * allow pre-allocation of fields, especially in systems like gRPC Metadata
-    ///   * allow a single-pass over an iterator (ex OpenTracing has no getter in TextMap).
+    /// 获取传播器使用的头列表。其用例包括：
+    ///   * 允许预分配字段，特别是在像 gRPC Metadata 这样的系统中
+    ///   * 允许对迭代器进行单次遍历（例如 OpenTracing 在 TextMap 中没有 getter）。
     /// </summary>
     public abstract ISet<string>? Fields { get; }
 
     /// <summary>
-    /// Injects the context into a carrier.
+    /// 将上下文注入到载体中。
     /// </summary>
-    /// <typeparam name="T">Type of object to set context on. Typically,HttpRequest or similar.</typeparam>
-    /// <param name="context">The default context to transmit over the wire.</param>
-    /// <param name="carrier">Object to set context on. Instance of this object will be passed to setter.</param>
-    /// <param name="setter">Action that will set name and value pair on the object.</param>
+    /// <typeparam name="T">设置上下文的对象类型。通常是 HttpRequest 或类似对象。</typeparam>
+    /// <param name="context">要通过网络传输的默认上下文。</param>
+    /// <param name="carrier">设置上下文的对象。此对象的实例将传递给 setter。</param>
+    /// <param name="setter">将在对象上设置名称和值对的操作。</param>
     public abstract void Inject<T>(PropagationContext context, T carrier, Action<T, string, string> setter);
 
     /// <summary>
-    /// Extracts the context from a carrier.
+    /// 从载体中提取上下文。
     /// </summary>
-    /// <typeparam name="T">Type of object to extract context from. Typically, HttpRequest or similar.</typeparam>
-    /// <param name="context">The default context to be used if Extract fails.</param>
-    /// <param name="carrier">Object to extract context from. Instance of this object will be passed to the getter.</param>
-    /// <param name="getter">Function that will return string value of a key with the specified name.</param>
-    /// <returns>Context from its text representation.</returns>
+    /// <typeparam name="T">从中提取上下文的对象类型。通常是 HttpRequest 或类似对象。</typeparam>
+    /// <param name="context">提取失败时使用的默认上下文。</param>
+    /// <param name="carrier">从中提取上下文的对象。此对象的实例将传递给 getter。</param>
+    /// <param name="getter">将返回具有指定名称的键的字符串值的函数。</param>
+    /// <returns>从其文本表示形式中提取的上下文。</returns>
     public abstract PropagationContext Extract<T>(PropagationContext context, T carrier, Func<T, string, IEnumerable<string>?> getter);
 }

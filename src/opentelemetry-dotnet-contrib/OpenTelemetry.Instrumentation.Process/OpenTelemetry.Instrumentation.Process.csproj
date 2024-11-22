@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(NetStandardMinimumSupportedVersion)</TargetFrameworks>
+    <Description>dotnet process instrumentation for OpenTelemetry .NET.</Description>
+    <PackageTags>$(PackageTags);process</PackageTags>
+    <MinVerTagPrefix>Instrumentation.Process-</MinVerTagPrefix>
+  </PropertyGroup>
+
+  <!-- Do not run Package Baseline Validation as this package has never released a stable version.
+  Remove this property once we have released a stable version and add PackageValidationBaselineVersion property. -->
+  <PropertyGroup>
+    <DisablePackageBaselineValidation>true</DisablePackageBaselineValidation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\OpenTelemetry.Api\OpenTelemetry.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\AssemblyVersionExtensions.cs" Link="Includes\AssemblyVersionExtensions.cs" />
+    <Compile Include="..\Shared\Guard.cs" Link="Includes\Guard.cs" />
+  </ItemGroup>
+
+</Project>

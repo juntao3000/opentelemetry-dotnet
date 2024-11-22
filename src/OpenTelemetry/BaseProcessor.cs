@@ -6,16 +6,18 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry;
 
 /// <summary>
-/// Base processor base class.
+/// 基础处理器基类。
 /// </summary>
-/// <typeparam name="T">The type of object to be processed.</typeparam>
+/// <typeparam name="T">要处理的对象类型。</typeparam>
 public abstract class BaseProcessor<T> : IDisposable
 {
+    // 处理器类型名称
     private readonly string typeName;
+    // 关闭计数
     private int shutdownCount;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BaseProcessor{T}"/> class.
+    /// 初始化 <see cref="BaseProcessor{T}"/> 类的新实例。
     /// </summary>
     public BaseProcessor()
     {
@@ -23,68 +25,58 @@ public abstract class BaseProcessor<T> : IDisposable
     }
 
     /// <summary>
-    /// Gets the parent <see cref="BaseProvider"/>.
+    /// 获取父 <see cref="BaseProvider"/>。
     /// </summary>
     public BaseProvider? ParentProvider { get; private set; }
 
     /// <summary>
-    /// Gets or sets the weight of the processor when added to the provider
-    /// pipeline. Default value: <c>0</c>.
+    /// 获取或设置处理器在添加到提供程序管道时的权重。默认值：<c>0</c>。
     /// </summary>
     /// <remarks>
-    /// Note: Weight is used to order processors when building a provider
-    /// pipeline. Lower weighted processors come before higher weighted
-    /// processors. Changing the weight after a pipeline has been constructed
-    /// has no effect.
+    /// 注意：权重用于在构建提供程序管道时对处理器进行排序。权重较低的处理器排在权重较高的处理器之前。在构建管道后更改权重没有效果。
     /// </remarks>
     internal int PipelineWeight { get; set; }
 
     /// <summary>
-    /// Called synchronously when a telemetry object is started.
+    /// 当一个遥测对象开始时同步调用。
     /// </summary>
     /// <param name="data">
-    /// The started telemetry object.
+    /// 开始的遥测对象。
     /// </param>
     /// <remarks>
-    /// This function is called synchronously on the thread which started
-    /// the telemetry object. This function should be thread-safe, and
-    /// should not block indefinitely or throw exceptions.
+    /// 此函数在启动遥测对象的线程上同步调用。此函数应是线程安全的，不应无限期阻塞或抛出异常。
     /// </remarks>
     public virtual void OnStart(T data)
     {
     }
 
     /// <summary>
-    /// Called synchronously when a telemetry object is ended.
+    /// 当一个遥测对象结束时同步调用。
     /// </summary>
     /// <param name="data">
-    /// The ended telemetry object.
+    /// 结束的遥测对象。
     /// </param>
     /// <remarks>
-    /// This function is called synchronously on the thread which ended
-    /// the telemetry object. This function should be thread-safe, and
-    /// should not block indefinitely or throw exceptions.
+    /// 此函数在结束遥测对象的线程上同步调用。此函数应是线程安全的，不应无限期阻塞或抛出异常。
     /// </remarks>
     public virtual void OnEnd(T data)
     {
     }
 
     /// <summary>
-    /// Flushes the processor, blocks the current thread until flush
-    /// completed, shutdown signaled or timed out.
+    /// 刷新处理器，阻塞当前线程直到刷新完成、关闭信号或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或 <c>Timeout.Infinite</c> 表示无限期等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when flush succeeded; otherwise, <c>false</c>.
+    /// 刷新成功时返回 <c>true</c>；否则返回 <c>false</c>。
     /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when the <c>timeoutMilliseconds</c> is smaller than -1.
+    /// 当 <c>timeoutMilliseconds</c> 小于 -1 时抛出。
     /// </exception>
     /// <remarks>
-    /// This function guarantees thread-safety.
+    /// 此函数保证线程安全。
     /// </remarks>
     public bool ForceFlush(int timeoutMilliseconds = Timeout.Infinite)
     {
@@ -106,22 +98,19 @@ public abstract class BaseProcessor<T> : IDisposable
     }
 
     /// <summary>
-    /// Attempts to shutdown the processor, blocks the current thread until
-    /// shutdown completed or timed out.
+    /// 尝试关闭处理器，阻塞当前线程直到关闭完成或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或 <c>Timeout.Infinite</c> 表示无限期等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when shutdown succeeded; otherwise, <c>false</c>.
+    /// 关闭成功时返回 <c>true</c>；否则返回 <c>false</c>。
     /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when the <c>timeoutMilliseconds</c> is smaller than -1.
+    /// 当 <c>timeoutMilliseconds</c> 小于 -1 时抛出。
     /// </exception>
     /// <remarks>
-    /// This function guarantees thread-safety. Only the first call will
-    /// win, subsequent calls will be no-op.
+    /// 此函数保证线程安全。只有第一次调用会生效，后续调用将无效。
     /// </remarks>
     public bool Shutdown(int timeoutMilliseconds = Timeout.Infinite)
     {
@@ -160,20 +149,16 @@ public abstract class BaseProcessor<T> : IDisposable
     }
 
     /// <summary>
-    /// Called by <c>ForceFlush</c>. This function should block the current
-    /// thread until flush completed, shutdown signaled or timed out.
+    /// 由 <c>ForceFlush</c> 调用。此函数应阻塞当前线程直到刷新完成、关闭信号或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或 <c>Timeout.Infinite</c> 表示无限期等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when flush succeeded; otherwise, <c>false</c>.
+    /// 刷新成功时返回 <c>true</c>；否则返回 <c>false</c>。
     /// </returns>
     /// <remarks>
-    /// This function is called synchronously on the thread which called
-    /// <c>ForceFlush</c>. This function should be thread-safe, and should
-    /// not throw exceptions.
+    /// 此函数在调用 <c>ForceFlush</c> 的线程上同步调用。此函数应是线程安全的，不应抛出异常。
     /// </remarks>
     protected virtual bool OnForceFlush(int timeoutMilliseconds)
     {
@@ -181,20 +166,16 @@ public abstract class BaseProcessor<T> : IDisposable
     }
 
     /// <summary>
-    /// Called by <c>Shutdown</c>. This function should block the current
-    /// thread until shutdown completed or timed out.
+    /// 由 <c>Shutdown</c> 调用。此函数应阻塞当前线程直到关闭完成或超时。
     /// </summary>
     /// <param name="timeoutMilliseconds">
-    /// The number (non-negative) of milliseconds to wait, or
-    /// <c>Timeout.Infinite</c> to wait indefinitely.
+    /// 等待的毫秒数（非负），或 <c>Timeout.Infinite</c> 表示无限期等待。
     /// </param>
     /// <returns>
-    /// Returns <c>true</c> when shutdown succeeded; otherwise, <c>false</c>.
+    /// 关闭成功时返回 <c>true</c>；否则返回 <c>false</c>。
     /// </returns>
     /// <remarks>
-    /// This function is called synchronously on the thread which made the
-    /// first call to <c>Shutdown</c>. This function should not throw
-    /// exceptions.
+    /// 此函数在第一次调用 <c>Shutdown</c> 的线程上同步调用。此函数不应抛出异常。
     /// </remarks>
     protected virtual bool OnShutdown(int timeoutMilliseconds)
     {
@@ -202,12 +183,10 @@ public abstract class BaseProcessor<T> : IDisposable
     }
 
     /// <summary>
-    /// Releases the unmanaged resources used by this class and optionally
-    /// releases the managed resources.
+    /// 释放该类使用的非托管资源，并可选择性地释放托管资源。
     /// </summary>
     /// <param name="disposing">
-    /// <see langword="true"/> to release both managed and unmanaged resources;
-    /// <see langword="false"/> to release only unmanaged resources.
+    /// <see langword="true"/> 释放托管和非托管资源；<see langword="false"/> 仅释放非托管资源。
     /// </param>
     protected virtual void Dispose(bool disposing)
     {

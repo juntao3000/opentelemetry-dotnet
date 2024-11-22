@@ -4,13 +4,13 @@
 namespace OpenTelemetry.Resources;
 
 /// <summary>
-/// An interface for Resource detectors.
+/// 资源检测器接口。
 /// </summary>
 public interface IResourceDetector
 {
     /// <summary>
-    /// Called to get a resource with attributes from detector.
+    /// 调用以从检测器获取带有属性的资源。
     /// </summary>
-    /// <returns>An instance of <see cref="Resource"/>.</returns>
-    Resource Detect();
+    /// <returns>一个 <see cref="Resource"/> 的实例。</returns>
+    Resource Detect(); // 检测资源的方法，返回一个Resource实例
 }

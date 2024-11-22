@@ -7,40 +7,47 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Represents an exponential bucket histogram with base = 2 ^ (2 ^ (-scale)).
-/// An exponential bucket histogram has infinite number of buckets, which are
-/// identified by <c>Bucket[index] = ( base ^ index, base ^ (index + 1) ]</c>,
-/// where <c>index</c> is an integer.
+/// 表示一个以 2 ^ (2 ^ (-scale)) 为底的指数桶直方图。
+/// 指数桶直方图有无限数量的桶，这些桶由 <c>Bucket[index] = ( base ^ index, base ^ (index + 1) ]</c> 标识，其中 <c>index</c> 是一个整数。
 /// </summary>
 internal sealed partial class Base2ExponentialBucketHistogram
 {
+    // 运行时的总和
     internal double RunningSum;
+    // 快照时的总和
     internal double SnapshotSum;
 
+    // 运行时的最小值
     internal double RunningMin = double.PositiveInfinity;
+    // 快照时的最小值
     internal double SnapshotMin;
 
+    // 运行时的最大值
     internal double RunningMax = double.NegativeInfinity;
+    // 快照时的最大值
     internal double SnapshotMax;
 
+    // 快照时的指数直方图数据
     internal ExponentialHistogramData SnapshotExponentialHistogramData = new();
 
+    // 缩放因子
     private int scale;
-    private double scalingFactor; // 2 ^ scale / log(2)
+    // 缩放因子计算结果 2 ^ scale / log(2)
+    private double scalingFactor;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Base2ExponentialBucketHistogram"/> class.
+    /// 初始化 <see cref="Base2ExponentialBucketHistogram"/> 类的新实例。
     /// </summary>
     /// <param name="maxBuckets">
-    /// The maximum number of buckets in each of the positive and negative ranges, not counting the special zero bucket. The default value is 160.
+    /// 正负范围内每个范围的最大桶数，不包括特殊的零桶。默认值为 160。
     /// </param>
     /// <param name="scale">
-    /// Maximum scale factor. The default value is 20.
+    /// 最大缩放因子。默认值为 20。
     /// </param>
     public Base2ExponentialBucketHistogram(int maxBuckets = 160, int scale = 20)
     {
         /*
-        The following table is calculated based on [ MapToIndex(double.Epsilon), MapToIndex(double.MaxValue) ]:
+        以下表格是基于 [ MapToIndex(double.Epsilon), MapToIndex(double.MaxValue) ] 计算的：
 
         | Scale | Index Range               |
         | ----- | ------------------------- |
@@ -83,7 +90,7 @@ internal sealed partial class Base2ExponentialBucketHistogram
         Guard.ThrowIfOutOfRange(scale, min: -11, max: 20);
 
         /*
-        Regardless of the scale, MapToIndex(1) will always be -1, so we need two buckets at minimum:
+        无论缩放因子如何，MapToIndex(1) 总是 -1，所以我们至少需要两个桶：
             bucket[-1] = (1/base, 1]
             bucket[0] = (1, base]
         */
@@ -94,6 +101,7 @@ internal sealed partial class Base2ExponentialBucketHistogram
         this.NegativeBuckets = new CircularBufferBuckets(maxBuckets);
     }
 
+    // 缩放因子属性
     internal int Scale
     {
         get => this.scale;
@@ -102,50 +110,51 @@ internal sealed partial class Base2ExponentialBucketHistogram
         {
             this.scale = value;
 
-            // A subset of Math.ScaleB(Math.Log2(Math.E), value)
+            // Math.ScaleB(Math.Log2(Math.E), value) 的子集
             this.scalingFactor = BitConverter.Int64BitsToDouble(0x71547652B82FEL | ((0x3FFL + value) << 52 /* fraction width */));
         }
     }
 
+    // 缩放因子计算结果属性
     internal double ScalingFactor => this.scalingFactor;
 
+    // 正数桶
     internal CircularBufferBuckets PositiveBuckets { get; }
 
+    // 零值计数
     internal long ZeroCount { get; private set; }
 
+    // 负数桶
     internal CircularBufferBuckets NegativeBuckets { get; }
 
     /// <summary>
-    /// Maps a finite positive IEEE 754 double-precision floating-point
-    /// number to <c>Bucket[index] = ( base ^ index, base ^ (index + 1) ]</c>,
-    /// where <c>index</c> is an integer.
+    /// 将有限的正 IEEE 754 双精度浮点数映射到 <c>Bucket[index] = ( base ^ index, base ^ (index + 1) ]</c>，其中 <c>index</c> 是一个整数。
     /// </summary>
     /// <param name="value">
-    /// The value to be bucketized. Must be a finite positive number.
+    /// 要进行桶化的值。必须是有限的正数。
     /// </param>
     /// <returns>
-    /// Returns the index of the bucket.
+    /// 返回桶的索引。
     /// </returns>
     public int MapToIndex(double value)
     {
-        Debug.Assert(MathHelper.IsFinite(value), "IEEE-754 +Inf, -Inf and NaN should be filtered out before calling this method.");
-        Debug.Assert(value != 0, "IEEE-754 zero values should be handled by ZeroCount.");
-        Debug.Assert(value > 0, "IEEE-754 negative values should be normalized before calling this method.");
+        Debug.Assert(MathHelper.IsFinite(value), "IEEE-754 +Inf, -Inf 和 NaN 应在调用此方法之前被过滤掉。");
+        Debug.Assert(value != 0, "IEEE-754 零值应由 ZeroCount 处理。");
+        Debug.Assert(value > 0, "IEEE-754 负值应在调用此方法之前进行归一化。");
 
         var bits = BitConverter.DoubleToInt64Bits(value);
         var fraction = bits & 0xFFFFFFFFFFFFFL /* fraction mask */;
 
         if (this.Scale > 0)
         {
-            // TODO: do we really need this given the lookup table is needed for scale>0 anyways?
+            // TODO: 鉴于缩放因子>0时需要查找表，我们真的需要这个吗？
             if (fraction == 0)
             {
                 var exp = (int)((bits & 0x7FF0000000000000L /* exponent mask */) >> 52 /* fraction width */);
                 return ((exp - 1023 /* exponent bias */) << this.Scale) - 1;
             }
 
-            // TODO: due to precision issue, the values that are close to the bucket
-            // boundaries should be closely examined to avoid off-by-one.
+            // TODO: 由于精度问题，接近桶边界的值应仔细检查以避免偏差。
 
             return (int)Math.Ceiling(Math.Log(value) * this.scalingFactor) - 1;
         }
@@ -166,6 +175,10 @@ internal sealed partial class Base2ExponentialBucketHistogram
         }
     }
 
+    /// <summary>
+    /// 记录一个值到直方图中。
+    /// </summary>
+    /// <param name="value">要记录的值。</param>
     public void Record(double value)
     {
         if (!MathHelper.IsFinite(value))
@@ -194,18 +207,24 @@ internal sealed partial class Base2ExponentialBucketHistogram
         this.NegativeBuckets.ScaleDown(n);
         this.Scale -= n;
         n = buckets.TryIncrement(index >> n);
-        Debug.Assert(n == 0, "Increment should always succeed after scale down.");
+        Debug.Assert(n == 0, "缩放后增量应始终成功。");
     }
 
+    /// <summary>
+    /// 重置直方图。
+    /// </summary>
     internal void Reset()
     {
-        // TODO: Determine if this is sufficient for delta temporality.
-        // I'm not sure we should be resetting the scale.
+        // TODO: 确定这是否足以用于增量时间性。
+        // 我不确定我们是否应该重置缩放因子。
         this.ZeroCount = 0;
         this.PositiveBuckets.Reset();
         this.NegativeBuckets.Reset();
     }
 
+    /// <summary>
+    /// 创建直方图的快照。
+    /// </summary>
     internal void Snapshot()
     {
         this.SnapshotExponentialHistogramData.Scale = this.Scale;
@@ -214,14 +233,22 @@ internal sealed partial class Base2ExponentialBucketHistogram
         this.SnapshotExponentialHistogramData.NegativeBuckets.SnapshotBuckets(this.NegativeBuckets);
     }
 
+    /// <summary>
+    /// 获取快照的指数直方图数据。
+    /// </summary>
+    /// <returns>指数直方图数据。</returns>
     internal ExponentialHistogramData GetExponentialHistogramData()
     {
         return this.SnapshotExponentialHistogramData;
     }
 
+    /// <summary>
+    /// 复制当前直方图。
+    /// </summary>
+    /// <returns>复制的直方图。</returns>
     internal Base2ExponentialBucketHistogram Copy()
     {
-        Debug.Assert(this.PositiveBuckets.Capacity == this.NegativeBuckets.Capacity, "Capacity of positive and negative buckets are not equal.");
+        Debug.Assert(this.PositiveBuckets.Capacity == this.NegativeBuckets.Capacity, "正负桶的容量不相等。");
 
         return new Base2ExponentialBucketHistogram(this.PositiveBuckets.Capacity, this.SnapshotExponentialHistogramData.Scale)
         {

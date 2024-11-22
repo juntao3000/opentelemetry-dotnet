@@ -11,17 +11,17 @@ using System.Diagnostics;
 namespace OpenTelemetry;
 
 /// <summary>
-/// Extension methods on ActivityContext.
+/// ActivityContext 的扩展方法。
 /// </summary>
-public static class ActivityContextExtensions
+public static class ActivityContextExtensions // 扩展 ActivityContext 的静态类
 {
     /// <summary>
-    /// Returns a bool indicating if a ActivityContext is valid or not.
+    /// 返回一个布尔值，指示 ActivityContext 是否有效。
     /// </summary>
-    /// <param name="ctx">ActivityContext.</param>
-    /// <returns>whether the context is a valid one or not.</returns>
-    public static bool IsValid(this ActivityContext ctx)
+    /// <param name="ctx">ActivityContext。</param>
+    /// <returns>上下文是否有效。</returns>
+    public static bool IsValid(this ActivityContext ctx) // 判断 ActivityContext 是否有效的扩展方法
     {
-        return ctx != default;
+        return ctx != default; // 如果 ctx 不等于默认值，则表示有效
     }
 }

@@ -17,27 +17,33 @@ using OtlpResource = OpenTelemetry.Proto.Resource.V1;
 
 namespace OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation;
 
+// MetricItemExtensions类：提供扩展方法用于处理度量项
 internal static class MetricItemExtensions
 {
+    // MetricListPool：用于存储ScopeMetrics对象的并发集合
     private static readonly ConcurrentBag<ScopeMetrics> MetricListPool = new();
 
+    // AddMetrics方法：将度量数据添加到请求中
     internal static void AddMetrics(
         this OtlpCollector.ExportMetricsServiceRequest request,
         OtlpResource.Resource processResource,
         in Batch<Metric> metrics)
     {
+        // metricsByLibrary：按库名分组的度量数据字典
         var metricsByLibrary = new Dictionary<string, ScopeMetrics>();
+        // resourceMetrics：资源度量数据
         var resourceMetrics = new ResourceMetrics
         {
             Resource = processResource,
         };
         request.ResourceMetrics.Add(resourceMetrics);
 
+        // 遍历度量数据
         foreach (var metric in metrics)
         {
             var otlpMetric = metric.ToOtlpMetric();
 
-            // TODO: Replace null check with exception handling.
+            // TODO: 用异常处理替换空检查
             if (otlpMetric == null)
             {
                 OpenTelemetryProtocolExporterEventSource.Log.CouldNotTranslateMetric(
@@ -59,37 +65,47 @@ internal static class MetricItemExtensions
         }
     }
 
+    // Return方法：将请求中的度量数据返回到池中
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void Return(this OtlpCollector.ExportMetricsServiceRequest request)
     {
+        //Return 方法的目的是为了提高性能。具体来说，它通过对象池（ConcurrentBag < ScopeMetrics >）来重用 ScopeMetrics 对象，从而减少了频繁创建和销毁对象所带来的性能开销。
+
+        // 获取第一个资源度量数据
         var resourceMetrics = request.ResourceMetrics.FirstOrDefault();
         if (resourceMetrics == null)
         {
             return;
         }
 
+        // 遍历ScopeMetrics并清空度量数据和属性
         foreach (var scopeMetrics in resourceMetrics.ScopeMetrics)
         {
             scopeMetrics.Metrics.Clear();
             scopeMetrics.Scope.Attributes.Clear();
+            // 将ScopeMetrics对象返回到池中
             MetricListPool.Add(scopeMetrics);
         }
     }
 
+    // GetMetricListFromPool方法：从池中获取ScopeMetrics对象
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ScopeMetrics GetMetricListFromPool(string name, string version, IEnumerable<KeyValuePair<string, object?>>? meterTags)
     {
+        // 尝试从池中获取ScopeMetrics对象
         if (!MetricListPool.TryTake(out var scopeMetrics))
         {
+            // 如果池中没有可用的ScopeMetrics对象，则创建一个新的
             scopeMetrics = new ScopeMetrics
             {
                 Scope = new OtlpCommon.InstrumentationScope
                 {
-                    Name = name, // Name is enforced to not be null, but it can be empty.
-                    Version = version ?? string.Empty, // NRE throw by proto
+                    Name = name, // Name被强制不能为空，但可以为空字符串
+                    Version = version ?? string.Empty, // proto抛出的NRE
                 },
             };
 
+            // 如果meterTags不为空，则添加范围属性
             if (meterTags != null)
             {
                 AddScopeAttributes(meterTags, scopeMetrics.Scope.Attributes);
@@ -97,6 +113,7 @@ internal static class MetricItemExtensions
         }
         else
         {
+            // 如果从池中获取到了ScopeMetrics对象，则更新其属性
             scopeMetrics.Scope.Name = name;
             scopeMetrics.Scope.Version = version ?? string.Empty;
             if (meterTags != null)
@@ -108,24 +125,29 @@ internal static class MetricItemExtensions
         return scopeMetrics;
     }
 
+    // ToOtlpMetric方法：将Metric对象转换为OtlpMetrics.Metric对象
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static OtlpMetrics.Metric ToOtlpMetric(this Metric metric)
     {
+        // 创建OtlpMetrics.Metric对象并设置其名称
         var otlpMetric = new OtlpMetrics.Metric
         {
             Name = metric.Name,
         };
 
+        // 如果描述不为空，则设置描述
         if (metric.Description != null)
         {
             otlpMetric.Description = metric.Description;
         }
 
+        // 如果单位不为空，则设置单位
         if (metric.Unit != null)
         {
             otlpMetric.Unit = metric.Unit;
         }
 
+        // 设置聚合时间类型
         OtlpMetrics.AggregationTemporality temporality;
         if (metric.Temporality == AggregationTemporality.Delta)
         {
@@ -136,6 +158,7 @@ internal static class MetricItemExtensions
             temporality = OtlpMetrics.AggregationTemporality.Cumulative;
         }
 
+        // 根据度量类型转换度量数据
         switch (metric.MetricType)
         {
             case MetricType.LongSum:
@@ -380,14 +403,17 @@ internal static class MetricItemExtensions
         return otlpMetric;
     }
 
+    // ToOtlpExemplar方法：将Exemplar对象转换为OtlpMetrics.Exemplar对象
     internal static OtlpMetrics.Exemplar ToOtlpExemplar<T>(T value, in Metrics.Exemplar exemplar)
         where T : struct
     {
+        // 创建OtlpMetrics.Exemplar对象并设置时间戳
         var otlpExemplar = new OtlpMetrics.Exemplar
         {
             TimeUnixNano = (ulong)exemplar.Timestamp.ToUnixTimeNanoseconds(),
         };
 
+        // 如果TraceId不为空，则设置TraceId和SpanId
         if (exemplar.TraceId != default)
         {
             byte[] traceIdBytes = new byte[16];
@@ -400,6 +426,7 @@ internal static class MetricItemExtensions
             otlpExemplar.SpanId = UnsafeByteOperations.UnsafeWrap(spanIdBytes);
         }
 
+        // 根据类型设置值
         if (typeof(T) == typeof(long))
         {
             otlpExemplar.AsInt = (long)(object)value;
@@ -414,6 +441,7 @@ internal static class MetricItemExtensions
             otlpExemplar.AsDouble = Convert.ToDouble(value);
         }
 
+        // 设置过滤后的属性
         var otlpExemplarFilteredAttributes = otlpExemplar.FilteredAttributes;
 
         foreach (var tag in exemplar.FilteredTags)
@@ -424,6 +452,7 @@ internal static class MetricItemExtensions
         return otlpExemplar;
     }
 
+    // AddAttributes方法：将标签添加到属性集合中
     private static void AddAttributes(ReadOnlyTagCollection tags, RepeatedField<OtlpCommon.KeyValue> attributes)
     {
         foreach (var tag in tags)
@@ -432,6 +461,7 @@ internal static class MetricItemExtensions
         }
     }
 
+    // AddScopeAttributes方法：将范围标签添加到属性集合中
     private static void AddScopeAttributes(IEnumerable<KeyValuePair<string, object?>> meterTags, RepeatedField<OtlpCommon.KeyValue> attributes)
     {
         foreach (var tag in meterTags)

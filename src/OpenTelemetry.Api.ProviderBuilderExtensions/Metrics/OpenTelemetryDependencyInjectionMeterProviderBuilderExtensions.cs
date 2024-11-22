@@ -11,20 +11,19 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Contains extension methods for the <see cref="MeterProviderBuilder"/> class.
+/// 包含 <see cref="MeterProviderBuilder"/> 类的扩展方法。
 /// </summary>
 public static class OpenTelemetryDependencyInjectionMeterProviderBuilderExtensions
 {
     /// <summary>
-    /// Adds instrumentation to the provider.
+    /// 向提供程序添加仪器。
     /// </summary>
     /// <remarks>
-    /// Note: The type specified by <typeparamref name="T"/> will be
-    /// registered as a singleton service into application services.
+    /// 注意：由 <typeparamref name="T"/> 指定的类型将作为单例服务注册到应用程序服务中。
     /// </remarks>
-    /// <typeparam name="T">Instrumentation type.</typeparam>
-    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>.</param>
-    /// <returns>The supplied <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    /// <typeparam name="T">仪器类型。</typeparam>
+    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>。</param>
+    /// <returns>返回 <see cref="MeterProviderBuilder"/> 以便链式调用。</returns>
     public static MeterProviderBuilder AddInstrumentation<
 #if NET
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -32,8 +31,10 @@ public static class OpenTelemetryDependencyInjectionMeterProviderBuilderExtensio
     T>(this MeterProviderBuilder meterProviderBuilder)
         where T : class
     {
+        // 将仪器类型 T 注册为单例服务
         meterProviderBuilder.ConfigureServices(services => services.TryAddSingleton<T>());
 
+        // 配置构建器以添加仪器
         meterProviderBuilder.ConfigureBuilder((sp, builder) =>
         {
             builder.AddInstrumentation(() => sp.GetRequiredService<T>());
@@ -43,17 +44,19 @@ public static class OpenTelemetryDependencyInjectionMeterProviderBuilderExtensio
     }
 
     /// <summary>
-    /// Adds instrumentation to the provider.
+    /// 向提供程序添加仪器。
     /// </summary>
-    /// <typeparam name="T">Instrumentation type.</typeparam>
-    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>.</param>
-    /// <param name="instrumentation">Instrumentation instance.</param>
-    /// <returns>The supplied <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    /// <typeparam name="T">仪器类型。</typeparam>
+    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>。</param>
+    /// <param name="instrumentation">仪器实例。</param>
+    /// <returns>返回 <see cref="MeterProviderBuilder"/> 以便链式调用。</returns>
     public static MeterProviderBuilder AddInstrumentation<T>(this MeterProviderBuilder meterProviderBuilder, T instrumentation)
         where T : class
     {
+        // 检查仪器实例是否为 null
         Guard.ThrowIfNull(instrumentation);
 
+        // 配置构建器以添加仪器
         meterProviderBuilder.ConfigureBuilder((sp, builder) =>
         {
             builder.AddInstrumentation(() => instrumentation);
@@ -63,19 +66,21 @@ public static class OpenTelemetryDependencyInjectionMeterProviderBuilderExtensio
     }
 
     /// <summary>
-    /// Adds instrumentation to the provider.
+    /// 向提供程序添加仪器。
     /// </summary>
-    /// <typeparam name="T">Instrumentation type.</typeparam>
-    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>.</param>
-    /// <param name="instrumentationFactory">Instrumentation factory.</param>
-    /// <returns>The supplied <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    /// <typeparam name="T">仪器类型。</typeparam>
+    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>。</param>
+    /// <param name="instrumentationFactory">仪器工厂。</param>
+    /// <returns>返回 <see cref="MeterProviderBuilder"/> 以便链式调用。</returns>
     public static MeterProviderBuilder AddInstrumentation<T>(
         this MeterProviderBuilder meterProviderBuilder,
         Func<IServiceProvider, T> instrumentationFactory)
         where T : class
     {
+        // 检查仪器工厂是否为 null
         Guard.ThrowIfNull(instrumentationFactory);
 
+        // 配置构建器以添加仪器
         meterProviderBuilder.ConfigureBuilder((sp, builder) =>
         {
             builder.AddInstrumentation(() => instrumentationFactory(sp));
@@ -85,19 +90,21 @@ public static class OpenTelemetryDependencyInjectionMeterProviderBuilderExtensio
     }
 
     /// <summary>
-    /// Adds instrumentation to the provider.
+    /// 向提供程序添加仪器。
     /// </summary>
-    /// <typeparam name="T">Instrumentation type.</typeparam>
-    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>.</param>
-    /// <param name="instrumentationFactory">Instrumentation factory.</param>
-    /// <returns>The supplied <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    /// <typeparam name="T">仪器类型。</typeparam>
+    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>。</param>
+    /// <param name="instrumentationFactory">仪器工厂。</param>
+    /// <returns>返回 <see cref="MeterProviderBuilder"/> 以便链式调用。</returns>
     public static MeterProviderBuilder AddInstrumentation<T>(
         this MeterProviderBuilder meterProviderBuilder,
         Func<IServiceProvider, MeterProvider, T> instrumentationFactory)
         where T : class
     {
+        // 检查仪器工厂是否为 null
         Guard.ThrowIfNull(instrumentationFactory);
 
+        // 配置构建器以添加仪器
         meterProviderBuilder.ConfigureBuilder((sp, builder) =>
         {
             if (builder is IMeterProviderBuilder iMeterProviderBuilder
@@ -111,16 +118,14 @@ public static class OpenTelemetryDependencyInjectionMeterProviderBuilderExtensio
     }
 
     /// <summary>
-    /// Register a callback action to configure the <see
-    /// cref="IServiceCollection"/> where metrics services are configured.
+    /// 注册回调操作以配置度量服务配置的 <see cref="IServiceCollection"/>。
     /// </summary>
     /// <remarks>
-    /// Note: Metrics services are only available during the application
-    /// configuration phase.
+    /// 注意：度量服务仅在应用程序配置阶段可用。
     /// </remarks>
-    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>.</param>
-    /// <param name="configure">Configuration callback.</param>
-    /// <returns>The supplied <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>。</param>
+    /// <param name="configure">配置回调。</param>
+    /// <returns>返回 <see cref="MeterProviderBuilder"/> 以便链式调用。</returns>
     public static MeterProviderBuilder ConfigureServices(
         this MeterProviderBuilder meterProviderBuilder,
         Action<IServiceCollection> configure)
@@ -134,33 +139,20 @@ public static class OpenTelemetryDependencyInjectionMeterProviderBuilderExtensio
     }
 
     /// <summary>
-    /// Register a callback action to configure the <see
-    /// cref="MeterProviderBuilder"/> once the application <see
-    /// cref="IServiceProvider"/> is available.
+    /// 注册回调操作以在应用程序 <see cref="IServiceProvider"/> 可用后配置 <see cref="MeterProviderBuilder"/>。
     /// </summary>
     /// <remarks>
-    /// <para><see cref="ConfigureBuilder"/> is an advanced API and is expected
-    /// to be used primarily by library authors.</para>
-    /// Notes:
+    /// <para><see cref="ConfigureBuilder"/> 是一个高级 API，主要供库作者使用。</para>
+    /// 注意事项：
     /// <list type="bullet">
-    /// <item>Services may NOT be added to the <see cref="IServiceCollection" />
-    /// (via <see cref="ConfigureServices"/>) inside <see
-    /// cref="ConfigureBuilder"/> because the <see cref="IServiceProvider"/> has
-    /// already been created. A <see cref="NotSupportedException"/> will be
-    /// thrown if services are accessed.</item>
-    /// <item>Library extension methods (for example <c>AddOtlpExporter</c>
-    /// inside <c>OpenTelemetry.Exporter.OpenTelemetryProtocol</c>) may depend
-    /// on services being available today or at any point in the future. It is
-    /// NOT recommend to call library extension methods from inside <see
-    /// cref="ConfigureBuilder"/>.</item>
+    /// <item>在 <see cref="ConfigureBuilder"/> 内部不能向 <see cref="IServiceCollection"/> 添加服务（通过 <see cref="ConfigureServices"/>），因为 <see cref="IServiceProvider"/> 已经创建。如果访问服务，将抛出 <see cref="NotSupportedException"/>。</item>
+    /// <item>库扩展方法（例如 <c>AddOtlpExporter</c> 在 <c>OpenTelemetry.Exporter.OpenTelemetryProtocol</c> 内）可能依赖于服务在当前或未来的任何时间可用。不建议在 <see cref="ConfigureBuilder"/> 内部调用库扩展方法。</item>
     /// </list>
-    /// For more information see: <see
-    /// href="https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/metrics/customizing-the-sdk/README.md#dependency-injection-support">Dependency
-    /// injection support</see>.
+    /// 有关更多信息，请参见：<see href="https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/docs/metrics/customizing-the-sdk/README.md#dependency-injection-support">依赖注入支持</see>。
     /// </remarks>
-    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>.</param>
-    /// <param name="configure">Configuration callback.</param>
-    /// <returns>The supplied <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    /// <param name="meterProviderBuilder"><see cref="MeterProviderBuilder"/>。</param>
+    /// <param name="configure">配置回调。</param>
+    /// <returns>返回 <see cref="MeterProviderBuilder"/> 以便链式调用。</returns>
     internal static MeterProviderBuilder ConfigureBuilder(
         this MeterProviderBuilder meterProviderBuilder,
         Action<IServiceProvider, MeterProviderBuilder> configure)

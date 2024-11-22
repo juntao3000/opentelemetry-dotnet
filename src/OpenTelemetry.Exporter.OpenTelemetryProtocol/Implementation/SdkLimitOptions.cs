@@ -5,27 +5,43 @@ using Microsoft.Extensions.Configuration;
 
 namespace OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation;
 
+// SdkLimitOptions类：用于配置SDK的各种限制选项
 internal sealed class SdkLimitOptions
 {
+    // 默认的SDK限制值
     private const int DefaultSdkLimit = 128;
+    // span属性值长度限制
     private int? spanAttributeValueLengthLimit;
+    // 是否设置了span属性值长度限制
     private bool spanAttributeValueLengthLimitSet;
+    // span属性数量限制
     private int? spanAttributeCountLimit;
+    // 是否设置了span属性数量限制
     private bool spanAttributeCountLimitSet;
+    // span事件属性数量限制
     private int? spanEventAttributeCountLimit;
+    // 是否设置了span事件属性数量限制
     private bool spanEventAttributeCountLimitSet;
+    // span链接属性数量限制
     private int? spanLinkAttributeCountLimit;
+    // 是否设置了span链接属性数量限制
     private bool spanLinkAttributeCountLimitSet;
+    // 日志记录属性值长度限制
     private int? logRecordAttributeValueLengthLimit;
+    // 是否设置了日志记录属性值长度限制
     private bool logRecordAttributeValueLengthLimitSet;
+    // 日志记录属性数量限制
     private int? logRecordAttributeCountLimit;
+    // 是否设置了日志记录属性数量限制
     private bool logRecordAttributeCountLimitSet;
 
+    // SdkLimitOptions构造函数：从环境变量中读取配置
     public SdkLimitOptions()
         : this(new ConfigurationBuilder().AddEnvironmentVariables().Build())
     {
     }
 
+    // SdkLimitOptions构造函数：从指定的配置中读取配置
     internal SdkLimitOptions(IConfiguration configuration)
     {
         // https://github.com/open-telemetry/opentelemetry-specification/blob/v1.25.0/specification/configuration/sdk-environment-variables.md#attribute-limits
@@ -46,20 +62,20 @@ internal sealed class SdkLimitOptions
     }
 
     /// <summary>
-    /// Gets or sets the maximum allowed attribute value size.
+    /// 获取或设置最大允许的属性值大小。
     /// </summary>
     public int? AttributeValueLengthLimit { get; set; }
 
     /// <summary>
-    /// Gets or sets the maximum allowed attribute count.
+    /// 获取或设置最大允许的属性数量。
     /// </summary>
     public int? AttributeCountLimit { get; set; }
 
     /// <summary>
-    /// Gets or sets the maximum allowed span attribute value size.
+    /// 获取或设置最大允许的span属性值大小。
     /// </summary>
     /// <remarks>
-    /// Note: Overrides the <see cref="AttributeValueLengthLimit"/> setting for spans if specified.
+    /// 注意：如果指定，将覆盖<see cref="AttributeValueLengthLimit"/>设置。
     /// </remarks>
     public int? SpanAttributeValueLengthLimit
     {
@@ -72,10 +88,10 @@ internal sealed class SdkLimitOptions
     }
 
     /// <summary>
-    /// Gets or sets the maximum allowed span attribute count.
+    /// 获取或设置最大允许的span属性数量。
     /// </summary>
     /// <remarks>
-    /// Note: Overrides the <see cref="AttributeCountLimit"/> setting for spans if specified.
+    /// 注意：如果指定，将覆盖<see cref="AttributeCountLimit"/>设置。
     /// </remarks>
     public int? SpanAttributeCountLimit
     {
@@ -88,20 +104,20 @@ internal sealed class SdkLimitOptions
     }
 
     /// <summary>
-    /// Gets or sets the maximum allowed span event count.
+    /// 获取或设置最大允许的span事件数量。
     /// </summary>
     public int? SpanEventCountLimit { get; set; }
 
     /// <summary>
-    /// Gets or sets the maximum allowed span link count.
+    /// 获取或设置最大允许的span链接数量。
     /// </summary>
     public int? SpanLinkCountLimit { get; set; }
 
     /// <summary>
-    /// Gets or sets the maximum allowed span event attribute count.
+    /// 获取或设置最大允许的span事件属性数量。
     /// </summary>
     /// <remarks>
-    /// Note: Overrides the <see cref="SpanAttributeCountLimit"/> setting for span events if specified.
+    /// 注意：如果指定，将覆盖<see cref="SpanAttributeCountLimit"/>设置。
     /// </remarks>
     public int? SpanEventAttributeCountLimit
     {
@@ -114,10 +130,10 @@ internal sealed class SdkLimitOptions
     }
 
     /// <summary>
-    /// Gets or sets the maximum allowed span link attribute count.
+    /// 获取或设置最大允许的span链接属性数量。
     /// </summary>
     /// <remarks>
-    /// Note: Overrides the <see cref="SpanAttributeCountLimit"/> setting for span links if specified.
+    /// 注意：如果指定，将覆盖<see cref="SpanAttributeCountLimit"/>设置。
     /// </remarks>
     public int? SpanLinkAttributeCountLimit
     {
@@ -130,10 +146,10 @@ internal sealed class SdkLimitOptions
     }
 
     /// <summary>
-    /// Gets or sets the maximum allowed log record attribute value size.
+    /// 获取或设置最大允许的日志记录属性值大小。
     /// </summary>
     /// <remarks>
-    /// Note: Overrides the <see cref="AttributeValueLengthLimit"/> setting for log records if specified.
+    /// 注意：如果指定，将覆盖<see cref="AttributeValueLengthLimit"/>设置。
     /// </remarks>
     public int? LogRecordAttributeValueLengthLimit
     {
@@ -146,10 +162,10 @@ internal sealed class SdkLimitOptions
     }
 
     /// <summary>
-    /// Gets or sets the maximum allowed log record attribute count.
+    /// 获取或设置最大允许的日志记录属性数量。
     /// </summary>
     /// <remarks>
-    /// Note: Overrides the <see cref="AttributeCountLimit"/> setting for log records if specified.
+    /// 注意：如果指定，将覆盖<see cref="AttributeCountLimit"/>设置。
     /// </remarks>
     public int? LogRecordAttributeCountLimit
     {
@@ -161,6 +177,7 @@ internal sealed class SdkLimitOptions
         }
     }
 
+    // SetIntConfigValue方法：从配置中读取整数值并设置
     private static void SetIntConfigValue(IConfiguration configuration, string key, Action<int?> setter, int? defaultValue)
     {
         if (configuration.TryGetIntValue(OpenTelemetryProtocolExporterEventSource.Log, key, out var result))

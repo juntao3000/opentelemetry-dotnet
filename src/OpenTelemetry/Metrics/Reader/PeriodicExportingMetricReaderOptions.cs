@@ -7,19 +7,20 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Contains periodic metric reader options.
+/// 包含周期性指标读取器选项。
 /// </summary>
 /// <remarks>
-/// Note: OTEL_METRIC_EXPORT_INTERVAL and OTEL_METRIC_EXPORT_TIMEOUT environment
-/// variables are parsed during object construction.
+/// 注意：OTEL_METRIC_EXPORT_INTERVAL 和 OTEL_METRIC_EXPORT_TIMEOUT 环境变量在对象构造期间解析。
 /// </remarks>
 public class PeriodicExportingMetricReaderOptions
 {
+    // OTEL_METRIC_EXPORT_INTERVAL 环境变量的键
     internal const string OTelMetricExportIntervalEnvVarKey = "OTEL_METRIC_EXPORT_INTERVAL";
+    // OTEL_METRIC_EXPORT_TIMEOUT 环境变量的键
     internal const string OTelMetricExportTimeoutEnvVarKey = "OTEL_METRIC_EXPORT_TIMEOUT";
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PeriodicExportingMetricReaderOptions"/> class.
+    /// 初始化 <see cref="PeriodicExportingMetricReaderOptions"/> 类的新实例。
     /// </summary>
     public PeriodicExportingMetricReaderOptions()
         : this(new ConfigurationBuilder().AddEnvironmentVariables().Build())
@@ -28,11 +29,13 @@ public class PeriodicExportingMetricReaderOptions
 
     internal PeriodicExportingMetricReaderOptions(IConfiguration configuration)
     {
+        // 尝试从环境变量中获取导出间隔时间
         if (configuration.TryGetIntValue(OpenTelemetrySdkEventSource.Log, OTelMetricExportIntervalEnvVarKey, out var interval))
         {
             this.ExportIntervalMilliseconds = interval;
         }
 
+        // 尝试从环境变量中获取导出超时时间
         if (configuration.TryGetIntValue(OpenTelemetrySdkEventSource.Log, OTelMetricExportTimeoutEnvVarKey, out var timeout))
         {
             this.ExportTimeoutMilliseconds = timeout;
@@ -40,16 +43,14 @@ public class PeriodicExportingMetricReaderOptions
     }
 
     /// <summary>
-    /// Gets or sets the metric export interval in milliseconds.
-    /// If not set, the default value depends on the type of metric exporter
-    /// associated with the metric reader.
+    /// 获取或设置以毫秒为单位的指标导出间隔。
+    /// 如果未设置，默认值取决于与指标读取器关联的指标导出器的类型。
     /// </summary>
     public int? ExportIntervalMilliseconds { get; set; }
 
     /// <summary>
-    /// Gets or sets the metric export timeout in milliseconds.
-    /// If not set, the default value depends on the type of metric exporter
-    /// associated with the metric reader.
+    /// 获取或设置以毫秒为单位的指标导出超时时间。
+    /// 如果未设置，默认值取决于与指标读取器关联的指标导出器的类型。
     /// </summary>
     public int? ExportTimeoutMilliseconds { get; set; }
 }

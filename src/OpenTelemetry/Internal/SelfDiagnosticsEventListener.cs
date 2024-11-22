@@ -8,22 +8,34 @@ using System.Text;
 namespace OpenTelemetry.Internal;
 
 /// <summary>
-/// SelfDiagnosticsEventListener class enables the events from OpenTelemetry event sources
-/// and write the events to a local file in a circular way.
+/// SelfDiagnosticsEventListener 类启用来自 OpenTelemetry 事件源的事件
+/// 并以循环方式将事件写入本地文件。
 /// </summary>
 internal sealed class SelfDiagnosticsEventListener : EventListener
 {
-    // Buffer size of the log line. A UTF-16 encoded character in C# can take up to 4 bytes if encoded in UTF-8.
+    // 日志行的缓冲区大小。C# 中的 UTF-16 编码字符在 UTF-8 编码中最多可以占用 4 个字节。
     private const int BUFFERSIZE = 4 * 5120;
+    // 事件源名称前缀
     private const string EventSourceNamePrefix = "OpenTelemetry-";
+    // 锁对象
     private readonly Lock lockObj = new();
+    // 日志级别
     private readonly EventLevel logLevel;
+    // 配置刷新器
     private readonly SelfDiagnosticsConfigRefresher configRefresher;
+    // 写缓冲区
     private readonly ThreadLocal<byte[]?> writeBuffer = new(() => null);
+    // 构造函数之前的事件源列表
     private readonly List<EventSource>? eventSourcesBeforeConstructor = new();
 
+    // 释放标志
     private bool disposedValue = false;
 
+    /// <summary>
+    /// SelfDiagnosticsEventListener 构造函数
+    /// </summary>
+    /// <param name="logLevel">日志级别</param>
+    /// <param name="configRefresher">配置刷新器</param>
     public SelfDiagnosticsEventListener(EventLevel logLevel, SelfDiagnosticsConfigRefresher configRefresher)
     {
         Guard.ThrowIfNull(configRefresher);
@@ -53,18 +65,17 @@ internal sealed class SelfDiagnosticsEventListener : EventListener
     }
 
     /// <summary>
-    /// Encode a string into the designated position in a buffer of bytes, which will be written as log.
-    /// If isParameter is true, wrap "{}" around the string.
-    /// The buffer should not be filled to full, leaving at least one byte empty space to fill a '\n' later.
-    /// If the buffer cannot hold all characters, truncate the string and replace extra content with "...".
-    /// The buffer is not guaranteed to be filled until the last byte due to variable encoding length of UTF-8,
-    /// in order to prioritize speed over space.
+    /// 将字符串编码到字节缓冲区的指定位置，该缓冲区将作为日志写入。
+    /// 如果 isParameter 为 true，则在字符串周围加上 "{}"。
+    /// 缓冲区不应填满，至少留一个字节的空位以便稍后填充 '\n'。
+    /// 如果缓冲区无法容纳所有字符，则截断字符串并用 "..." 替换多余的内容。
+    /// 由于 UTF-8 的可变编码长度，缓冲区不保证填满最后一个字节，以优先考虑速度而非空间。
     /// </summary>
-    /// <param name="str">The string to be encoded.</param>
-    /// <param name="isParameter">Whether the string is a parameter. If true, "{}" will be wrapped around the string.</param>
-    /// <param name="buffer">The byte array to contain the resulting sequence of bytes.</param>
-    /// <param name="position">The position at which to start writing the resulting sequence of bytes.</param>
-    /// <returns>The position of the buffer after the last byte of the resulting sequence.</returns>
+    /// <param name="str">要编码的字符串。</param>
+    /// <param name="isParameter">字符串是否为参数。如果为 true，则在字符串周围加上 "{}"。</param>
+    /// <param name="buffer">包含结果字节序列的字节数组。</param>
+    /// <param name="position">开始写入结果字节序列的位置。</param>
+    /// <returns>缓冲区中最后一个结果字节之后的位置。</returns>
     internal static int EncodeInBuffer(string? str, bool isParameter, byte[] buffer, int position)
     {
         if (string.IsNullOrEmpty(str))
@@ -75,7 +86,7 @@ internal sealed class SelfDiagnosticsEventListener : EventListener
         int charCount = str!.Length;
         int ellipses = isParameter ? "{...}\n".Length : "...\n".Length;
 
-        // Ensure there is space for "{...}\n" or "...\n".
+        // 确保有空间放置 "{...}\n" 或 "...\n"。
         if (buffer.Length - position - ellipses < 0)
         {
             return position;
@@ -83,8 +94,8 @@ internal sealed class SelfDiagnosticsEventListener : EventListener
 
         int estimateOfCharacters = (buffer.Length - position - ellipses) / 2;
 
-        // Ensure the UTF-16 encoded string can fit in buffer UTF-8 encoding.
-        // And leave space for "{...}\n" or "...\n".
+        // 确保 UTF-16 编码的字符串可以适应缓冲区的 UTF-8 编码。
+        // 并为 "{...}\n" 或 "...\n" 留出空间。
         if (charCount > estimateOfCharacters)
         {
             charCount = estimateOfCharacters;
@@ -111,6 +122,11 @@ internal sealed class SelfDiagnosticsEventListener : EventListener
         return position;
     }
 
+    /// <summary>
+    /// 写入事件
+    /// </summary>
+    /// <param name="eventMessage">事件消息</param>
+    /// <param name="payload">负载</param>
     internal void WriteEvent(string? eventMessage, ReadOnlyCollection<object?>? payload)
     {
         try
@@ -127,7 +143,7 @@ internal sealed class SelfDiagnosticsEventListener : EventListener
             pos = EncodeInBuffer(eventMessage, false, buffer, pos);
             if (payload != null)
             {
-                // Not using foreach because it can cause allocations
+                // 不使用 foreach 因为它会导致分配
                 for (int i = 0; i < payload.Count; ++i)
                 {
                     object? obj = payload[i];
@@ -160,34 +176,34 @@ internal sealed class SelfDiagnosticsEventListener : EventListener
         }
         catch (Exception)
         {
-            // Fail to allocate memory for buffer, or
-            // A concurrent condition: memory mapped file is disposed in other thread after TryGetLogStream() finishes.
-            // In this case, silently fail.
+            // 无法为缓冲区分配内存，或
+            // 并发条件：在 TryGetLogStream() 完成后，内存映射文件在其他线程中被释放。
+            // 在这种情况下，静默失败。
         }
     }
 
     /// <summary>
-    /// Write the <c>datetime</c> formatted string into <c>bytes</c> byte-array starting at <c>byteIndex</c> position.
+    /// 将 <c>datetime</c> 格式化字符串写入 <c>bytes</c> 字节数组，从 <c>byteIndex</c> 位置开始。
     /// <para>
     /// [DateTimeKind.Utc]
-    /// format: yyyy - MM - dd T HH : mm : ss . fffffff Z (i.e. 2020-12-09T10:20:50.4659412Z).
+    /// 格式: yyyy - MM - dd T HH : mm : ss . fffffff Z (例如 2020-12-09T10:20:50.4659412Z)。
     /// </para>
     /// <para>
     /// [DateTimeKind.Local]
-    /// format: yyyy - MM - dd T HH : mm : ss . fffffff +|- HH : mm (i.e. 2020-12-09T10:20:50.4659412-08:00).
+    /// 格式: yyyy - MM - dd T HH : mm : ss . fffffff +|- HH : mm (例如 2020-12-09T10:20:50.4659412-08:00)。
     /// </para>
     /// <para>
     /// [DateTimeKind.Unspecified]
-    /// format: yyyy - MM - dd T HH : mm : ss . fffffff (i.e. 2020-12-09T10:20:50.4659412).
+    /// 格式: yyyy - MM - dd T HH : mm : ss . fffffff (例如 2020-12-09T10:20:50.4659412)。
     /// </para>
     /// </summary>
     /// <remarks>
-    /// The bytes array must be large enough to write 27-33 charaters from the byteIndex starting position.
+    /// 字节数组必须足够大，从 byteIndex 开始写入 27-33 个字符。
     /// </remarks>
-    /// <param name="datetime">DateTime.</param>
-    /// <param name="bytes">Array of bytes to write.</param>
-    /// <param name="byteIndex">Starting index into bytes array.</param>
-    /// <returns>The number of bytes written.</returns>
+    /// <param name="datetime">DateTime。</param>
+    /// <param name="bytes">要写入的字节数组。</param>
+    /// <param name="byteIndex">字节数组的起始索引。</param>
+    /// <returns>写入的字节数。</returns>
     internal int DateTimeGetBytes(DateTime datetime, byte[] bytes, int byteIndex)
     {
         int num;
@@ -264,21 +280,24 @@ internal sealed class SelfDiagnosticsEventListener : EventListener
 
             case DateTimeKind.Unspecified:
             default:
-                // Skip
+                // 跳过
                 break;
         }
 
         return pos - byteIndex;
     }
 
+    /// <summary>
+    /// 当事件源创建时调用
+    /// </summary>
+    /// <param name="eventSource">事件源</param>
     protected override void OnEventSourceCreated(EventSource eventSource)
     {
         if (eventSource.Name.StartsWith(EventSourceNamePrefix, StringComparison.Ordinal))
         {
-            // If there are EventSource classes already initialized as of now, this method would be called from
-            // the base class constructor before the first line of code in SelfDiagnosticsEventListener constructor.
-            // In this case logLevel is always its default value, "LogAlways".
-            // Thus we should save the event source and enable them later, when code runs in constructor.
+            // 如果现在已经初始化了 EventSource 类，则此方法将在 SelfDiagnosticsEventListener 构造函数中的第一行代码之前从基类构造函数调用。
+            // 在这种情况下，logLevel 始终是其默认值 "LogAlways"。
+            // 因此，我们应该保存事件源并在构造函数中运行代码时启用它们。
             if (this.eventSourcesBeforeConstructor != null)
             {
                 lock (this.lockObj)
@@ -298,21 +317,23 @@ internal sealed class SelfDiagnosticsEventListener : EventListener
     }
 
     /// <summary>
-    /// This method records the events from event sources to a local file, which is provided as a stream object by
-    /// SelfDiagnosticsConfigRefresher class. The file size is bound to a upper limit. Once the write position
-    /// reaches the end, it will be reset to the beginning of the file.
+    /// 此方法将事件源的事件记录到本地文件，该文件由 SelfDiagnosticsConfigRefresher 类提供为流对象。文件大小有上限。一旦写入位置达到文件末尾，它将重置为文件的开头。
     /// </summary>
-    /// <param name="eventData">Data of the EventSource event.</param>
+    /// <param name="eventData">EventSource 事件的数据。</param>
     protected override void OnEventWritten(EventWrittenEventArgs eventData)
     {
-        // Note: The EventSource check here works around a bug in EventListener.
-        // See: https://github.com/open-telemetry/opentelemetry-dotnet/pull/5046
+        // 注意：此处的 EventSource 检查解决了 EventListener 中的一个错误。
+        // 参见：https://github.com/open-telemetry/opentelemetry-dotnet/pull/5046
         if (eventData.EventSource.Name.StartsWith(EventSourceNamePrefix, StringComparison.OrdinalIgnoreCase))
         {
             this.WriteEvent(eventData.Message, eventData.Payload);
         }
     }
 
+    /// <summary>
+    /// 释放资源
+    /// </summary>
+    /// <param name="disposing">是否释放托管资源</param>
     private void Dispose(bool disposing)
     {
         if (this.disposedValue)

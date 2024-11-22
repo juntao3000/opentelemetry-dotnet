@@ -9,43 +9,50 @@ using System.Diagnostics;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// Exemplar implementation.
+/// Exemplar 实现。
 /// </summary>
 /// <remarks>
-/// Specification: <see
-/// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#exemplar"/>.
+/// 规范: <see
+/// href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/sdk.md#exemplar"/>。
 /// </remarks>
 public struct Exemplar
 {
 #if NET
+    // 视图定义的标签键集合
     internal FrozenSet<string>? ViewDefinedTagKeys;
 #else
-    internal HashSet<string>? ViewDefinedTagKeys;
+        // 视图定义的标签键集合
+        internal HashSet<string>? ViewDefinedTagKeys;
 #endif
 
+    // 空的只读过滤标签集合
     private static readonly ReadOnlyFilteredTagCollection Empty = new(excludedKeys: null, Array.Empty<KeyValuePair<string, object?>>(), count: 0);
+    // 标签数量
     private int tagCount;
+    // 标签存储
     private KeyValuePair<string, object?>[]? tagStorage;
+    // 指标点值存储
     private MetricPointValueStorage valueStorage;
+    // 是否处于临界区
     private int isCriticalSectionOccupied;
 
     /// <summary>
-    /// Gets the timestamp.
+    /// 获取时间戳。
     /// </summary>
     public DateTimeOffset Timestamp { readonly get; private set; }
 
     /// <summary>
-    /// Gets the TraceId.
+    /// 获取 TraceId。
     /// </summary>
     public ActivityTraceId TraceId { readonly get; private set; }
 
     /// <summary>
-    /// Gets the SpanId.
+    /// 获取 SpanId。
     /// </summary>
     public ActivitySpanId SpanId { readonly get; private set; }
 
     /// <summary>
-    /// Gets the long value.
+    /// 获取 long 类型的值。
     /// </summary>
     public long LongValue
     {
@@ -54,7 +61,7 @@ public struct Exemplar
     }
 
     /// <summary>
-    /// Gets the double value.
+    /// 获取 double 类型的值。
     /// </summary>
     public double DoubleValue
     {
@@ -63,13 +70,11 @@ public struct Exemplar
     }
 
     /// <summary>
-    /// Gets the filtered tags.
+    /// 获取过滤后的标签。
     /// </summary>
     /// <remarks>
-    /// Note: <see cref="FilteredTags"/> represents the set of tags which were
-    /// supplied at measurement but dropped due to filtering configured by a
-    /// view (<see cref="MetricStreamConfiguration.TagKeys"/>). If view tag
-    /// filtering is not configured <see cref="FilteredTags"/> will be empty.
+    /// 注意: <see cref="FilteredTags"/> 表示在测量时提供但由于视图配置的过滤而被丢弃的标签集合
+    /// (<see cref="MetricStreamConfiguration.TagKeys"/>)。如果未配置视图标签过滤，<see cref="FilteredTags"/> 将为空。
     /// </remarks>
     public readonly ReadOnlyFilteredTagCollection FilteredTags
     {
@@ -88,17 +93,17 @@ public struct Exemplar
         }
     }
 
+    /// <summary>
+    /// 更新 Exemplar。
+    /// </summary>
     internal void Update<T>(in ExemplarMeasurement<T> measurement)
         where T : struct
     {
         if (Interlocked.Exchange(ref this.isCriticalSectionOccupied, 1) != 0)
         {
-            // Note: If we reached here it means some other thread is already
-            // updating the exemplar. Instead of spinning, we abort. The idea is
-            // for two exemplars offered at more or less the same time there
-            // really isn't a difference which one is stored so it is an
-            // optimization to let the losing thread(s) get back to work instead
-            // of spinning.
+            // 注意: 如果到达这里，意味着其他线程已经在更新 Exemplar。为了避免自旋，我们中止。
+            // 这样做的目的是，对于几乎同时提供的两个 Exemplar，存储哪一个实际上没有区别，
+            // 因此这是一种优化，让失败的线程回到工作中，而不是自旋。
             return;
         }
 
@@ -138,16 +143,25 @@ public struct Exemplar
         Interlocked.Exchange(ref this.isCriticalSectionOccupied, 0);
     }
 
+    /// <summary>
+    /// 重置 Exemplar。
+    /// </summary>
     internal void Reset()
     {
         this.Timestamp = default;
     }
 
+    /// <summary>
+    /// 判断 Exemplar 是否已更新。
+    /// </summary>
     internal readonly bool IsUpdated()
     {
         return this.Timestamp != default;
     }
 
+    /// <summary>
+    /// 收集 Exemplar。
+    /// </summary>
     internal void Collect(ref Exemplar destination, bool reset)
     {
         if (Interlocked.Exchange(ref this.isCriticalSectionOccupied, 1) != 0)
@@ -171,6 +185,9 @@ public struct Exemplar
         Interlocked.Exchange(ref this.isCriticalSectionOccupied, 0);
     }
 
+    /// <summary>
+    /// 复制 Exemplar。
+    /// </summary>
     internal readonly void Copy(ref Exemplar destination)
     {
         destination.Timestamp = this.Timestamp;
@@ -188,6 +205,9 @@ public struct Exemplar
         }
     }
 
+    /// <summary>
+    /// 存储原始标签。
+    /// </summary>
     private void StoreRawTags(ReadOnlySpan<KeyValuePair<string, object?>> tags)
     {
         this.tagCount = tags.Length;
@@ -204,6 +224,9 @@ public struct Exemplar
         tags.CopyTo(this.tagStorage);
     }
 
+    /// <summary>
+    /// 获取锁（罕见情况）。
+    /// </summary>
     private void AcquireLockRare()
     {
         SpinWait spinWait = default;

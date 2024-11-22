@@ -7,28 +7,34 @@ using OpenTelemetry.Internal;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// MetricReader implementation which collects metrics based on
-/// a user-configurable time interval and passes the metrics to
-/// the configured MetricExporter.
+/// MetricReader 实现类，根据用户配置的时间间隔收集度量，并将度量传递给配置的 MetricExporter。
 /// </summary>
 public class PeriodicExportingMetricReader : BaseExportingMetricReader
 {
+    // 默认导出间隔（毫秒）
     internal const int DefaultExportIntervalMilliseconds = 60000;
+    // 默认导出超时时间（毫秒）
     internal const int DefaultExportTimeoutMilliseconds = 30000;
 
+    // 导出间隔（毫秒）
     internal readonly int ExportIntervalMilliseconds;
+    // 导出超时时间（毫秒）
     internal readonly int ExportTimeoutMilliseconds;
+    // 导出线程
     private readonly Thread exporterThread;
+    // 导出触发器
     private readonly AutoResetEvent exportTrigger = new(false);
+    // 关闭触发器
     private readonly ManualResetEvent shutdownTrigger = new(false);
+    // 是否已释放
     private bool disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PeriodicExportingMetricReader"/> class.
+    /// 初始化 <see cref="PeriodicExportingMetricReader"/> 类的新实例。
     /// </summary>
-    /// <param name="exporter">Exporter instance to export Metrics to.</param>
-    /// <param name="exportIntervalMilliseconds">The interval in milliseconds between two consecutive exports. The default value is 60000.</param>
-    /// <param name="exportTimeoutMilliseconds">How long the export can run before it is cancelled. The default value is 30000.</param>
+    /// <param name="exporter">用于导出度量的导出器实例。</param>
+    /// <param name="exportIntervalMilliseconds">两次连续导出之间的间隔（毫秒）。默认值为 60000。</param>
+    /// <param name="exportTimeoutMilliseconds">导出运行的最长时间（毫秒）。默认值为 30000。</param>
     public PeriodicExportingMetricReader(
         BaseExporter<Metric> exporter,
         int exportIntervalMilliseconds = DefaultExportIntervalMilliseconds,
@@ -102,6 +108,7 @@ public class PeriodicExportingMetricReader : BaseExportingMetricReader
         base.Dispose(disposing);
     }
 
+    // 导出处理过程
     private void ExporterProc()
     {
         int index;
@@ -124,16 +131,16 @@ public class PeriodicExportingMetricReader : BaseExportingMetricReader
 
             switch (index)
             {
-                case 0: // export
-                    OpenTelemetrySdkEventSource.Log.MetricReaderEvent("PeriodicExportingMetricReader calling MetricReader.Collect because Export was triggered.");
+                case 0: // 导出
+                    OpenTelemetrySdkEventSource.Log.MetricReaderEvent("PeriodicExportingMetricReader 调用 MetricReader.Collect 因为导出被触发。");
                     this.Collect(this.ExportTimeoutMilliseconds);
                     break;
-                case 1: // shutdown
-                    OpenTelemetrySdkEventSource.Log.MetricReaderEvent("PeriodicExportingMetricReader calling MetricReader.Collect because Shutdown was triggered.");
-                    this.Collect(this.ExportTimeoutMilliseconds); // TODO: do we want to use the shutdown timeout here?
+                case 1: // 关闭
+                    OpenTelemetrySdkEventSource.Log.MetricReaderEvent("PeriodicExportingMetricReader 调用 MetricReader.Collect 因为关闭被触发。");
+                    this.Collect(this.ExportTimeoutMilliseconds); // TODO: 我们是否希望在这里使用关闭超时？
                     return;
-                case WaitHandle.WaitTimeout: // timer
-                    OpenTelemetrySdkEventSource.Log.MetricReaderEvent("PeriodicExportingMetricReader calling MetricReader.Collect because the export interval has elapsed.");
+                case WaitHandle.WaitTimeout: // 定时器
+                    OpenTelemetrySdkEventSource.Log.MetricReaderEvent("PeriodicExportingMetricReader 调用 MetricReader.Collect 因为导出间隔已过。");
                     this.Collect(this.ExportTimeoutMilliseconds);
                     break;
             }

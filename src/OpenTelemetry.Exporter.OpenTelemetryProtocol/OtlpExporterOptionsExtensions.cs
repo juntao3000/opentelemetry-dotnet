@@ -20,14 +20,18 @@ using TraceOtlpCollector = OpenTelemetry.Proto.Collector.Trace.V1;
 
 namespace OpenTelemetry.Exporter;
 
+// OpenTelemetry Protocol (OTLP) 导出器选项扩展类
 internal static class OtlpExporterOptionsExtensions
 {
 #if NETSTANDARD2_1 || NET
+    // 创建 gRPC 通道
     public static GrpcChannel CreateChannel(this OtlpExporterOptions options)
 #else
+    // 创建 gRPC 通道
     public static Channel CreateChannel(this OtlpExporterOptions options)
 #endif
     {
+        // 检查 URI 协议是否为 http 或 https
         if (options.Endpoint.Scheme != Uri.UriSchemeHttp && options.Endpoint.Scheme != Uri.UriSchemeHttps)
         {
             throw new NotSupportedException($"Endpoint URI scheme ({options.Endpoint.Scheme}) is not supported. Currently only \"http\" and \"https\" are supported.");
@@ -50,11 +54,13 @@ internal static class OtlpExporterOptionsExtensions
 #endif
     }
 
+    // 从 Headers 获取 Metadata
     public static Metadata GetMetadataFromHeaders(this OtlpExporterOptions options)
     {
         return options.GetHeaders<Metadata>((m, k, v) => m.Add(k, v));
     }
 
+    // 获取 Headers
     public static THeaders GetHeaders<THeaders>(this OtlpExporterOptions options, Action<THeaders, string, string> addHeader)
         where THeaders : new()
     {
@@ -62,15 +68,15 @@ internal static class OtlpExporterOptionsExtensions
         var headers = new THeaders();
         if (!string.IsNullOrEmpty(optionHeaders))
         {
-            // According to the specification, URL-encoded headers must be supported.
+            // 根据规范，必须支持 URL 编码的 Headers
             optionHeaders = Uri.UnescapeDataString(optionHeaders);
 
             Array.ForEach(
                 optionHeaders.Split(','),
                 (pair) =>
                 {
-                    // Specify the maximum number of substrings to return to 2
-                    // This treats everything that follows the first `=` in the string as the value to be added for the metadata key
+                    // 指定返回的子字符串的最大数量为 2
+                    // 这将把字符串中第一个 `=` 之后的所有内容视为要添加到元数据键的值
                     var keyValueData = pair.Split(new char[] { '=' }, 2);
                     if (keyValueData.Length != 2)
                     {
@@ -91,49 +97,56 @@ internal static class OtlpExporterOptionsExtensions
         return headers;
     }
 
+    // 获取 Trace 导出传输处理程序
     public static OtlpExporterTransmissionHandler<TraceOtlpCollector.ExportTraceServiceRequest> GetTraceExportTransmissionHandler(this OtlpExporterOptions options, ExperimentalOptions experimentalOptions)
     {
+        // 获取 Trace 导出客户端
         var exportClient = GetTraceExportClient(options);
 
-        // `HttpClient.Timeout.TotalMilliseconds` would be populated with the correct timeout value for both the exporter configuration cases:
-        // 1. User provides their own HttpClient. This case is straightforward as the user wants to use their `HttpClient` and thereby the same client's timeout value.
-        // 2. If the user configures timeout via the exporter options, then the timeout set for the `HttpClient` initialized by the exporter will be set to user provided value.
+        // `HttpClient.Timeout.TotalMilliseconds` 将填充正确的超时值
         double timeoutMilliseconds = exportClient is OtlpHttpTraceExportClient httpTraceExportClient
             ? httpTraceExportClient.HttpClient.Timeout.TotalMilliseconds
             : options.TimeoutMilliseconds;
 
+        // 如果启用了内存重试
         if (experimentalOptions.EnableInMemoryRetry)
         {
+            // 返回带有重试功能的传输处理程序
             return new OtlpExporterRetryTransmissionHandler<TraceOtlpCollector.ExportTraceServiceRequest>(exportClient, timeoutMilliseconds);
         }
+        // 如果启用了磁盘重试
         else if (experimentalOptions.EnableDiskRetry)
         {
+            // 确保磁盘重试目录路径不为空
             Debug.Assert(!string.IsNullOrEmpty(experimentalOptions.DiskRetryDirectoryPath), $"{nameof(experimentalOptions.DiskRetryDirectoryPath)} is null or empty");
 
+            // 返回带有持久化存储功能的传输处理程序
             return new OtlpExporterPersistentStorageTransmissionHandler<TraceOtlpCollector.ExportTraceServiceRequest>(
                 exportClient,
                 timeoutMilliseconds,
                 (byte[] data) =>
                 {
+                    // 将数据合并到请求中
                     var request = new TraceOtlpCollector.ExportTraceServiceRequest();
                     request.MergeFrom(data);
                     return request;
                 },
+                // 将路径组合成磁盘重试目录路径
                 Path.Combine(experimentalOptions.DiskRetryDirectoryPath, "traces"));
         }
         else
         {
+            // 返回普通的传输处理程序
             return new OtlpExporterTransmissionHandler<TraceOtlpCollector.ExportTraceServiceRequest>(exportClient, timeoutMilliseconds);
         }
     }
 
+    // 获取 Protobuf 导出传输处理程序
     public static ProtobufOtlpExporterTransmissionHandler GetProtobufExportTransmissionHandler(this OtlpExporterOptions options, ExperimentalOptions experimentalOptions)
     {
         var exportClient = GetProtobufExportClient(options);
 
-        // `HttpClient.Timeout.TotalMilliseconds` would be populated with the correct timeout value for both the exporter configuration cases:
-        // 1. User provides their own HttpClient. This case is straightforward as the user wants to use their `HttpClient` and thereby the same client's timeout value.
-        // 2. If the user configures timeout via the exporter options, then the timeout set for the `HttpClient` initialized by the exporter will be set to user provided value.
+        // `HttpClient.Timeout.TotalMilliseconds` 将填充正确的超时值
         double timeoutMilliseconds = exportClient is ProtobufOtlpHttpExportClient httpTraceExportClient
             ? httpTraceExportClient.HttpClient.Timeout.TotalMilliseconds
             : options.TimeoutMilliseconds;
@@ -157,6 +170,7 @@ internal static class OtlpExporterOptionsExtensions
         }
     }
 
+    // 获取 Protobuf 导出客户端
     public static IProtobufExportClient GetProtobufExportClient(this OtlpExporterOptions options)
     {
         var httpClient = options.HttpClientFactory?.Invoke() ?? throw new InvalidOperationException("OtlpExporterOptions was missing HttpClientFactory or it returned null.");
@@ -171,42 +185,51 @@ internal static class OtlpExporterOptionsExtensions
         }
     }
 
+    // 获取 Metrics 导出传输处理程序
     public static OtlpExporterTransmissionHandler<MetricsOtlpCollector.ExportMetricsServiceRequest> GetMetricsExportTransmissionHandler(this OtlpExporterOptions options, ExperimentalOptions experimentalOptions)
     {
+        // 获取 Metrics 导出客户端
         var exportClient = GetMetricsExportClient(options);
 
-        // `HttpClient.Timeout.TotalMilliseconds` would be populated with the correct timeout value for both the exporter configuration cases:
-        // 1. User provides their own HttpClient. This case is straightforward as the user wants to use their `HttpClient` and thereby the same client's timeout value.
-        // 2. If the user configures timeout via the exporter options, then the timeout set for the `HttpClient` initialized by the exporter will be set to user provided value.
+        // `HttpClient.Timeout.TotalMilliseconds` 将填充正确的超时值
         double timeoutMilliseconds = exportClient is OtlpHttpMetricsExportClient httpMetricsExportClient
             ? httpMetricsExportClient.HttpClient.Timeout.TotalMilliseconds
             : options.TimeoutMilliseconds;
 
+        // 如果启用了内存重试
         if (experimentalOptions.EnableInMemoryRetry)
         {
+            // 返回带有重试功能的传输处理程序
             return new OtlpExporterRetryTransmissionHandler<MetricsOtlpCollector.ExportMetricsServiceRequest>(exportClient, timeoutMilliseconds);
         }
+        // 如果启用了磁盘重试
         else if (experimentalOptions.EnableDiskRetry)
         {
+            // 确保磁盘重试目录路径不为空
             Debug.Assert(!string.IsNullOrEmpty(experimentalOptions.DiskRetryDirectoryPath), $"{nameof(experimentalOptions.DiskRetryDirectoryPath)} is null or empty");
 
+            // 返回带有持久化存储功能的传输处理程序
             return new OtlpExporterPersistentStorageTransmissionHandler<MetricsOtlpCollector.ExportMetricsServiceRequest>(
                 exportClient,
                 timeoutMilliseconds,
                 (byte[] data) =>
                 {
+                    // 将数据合并到请求中
                     var request = new MetricsOtlpCollector.ExportMetricsServiceRequest();
                     request.MergeFrom(data);
                     return request;
                 },
+                // 将路径组合成磁盘重试目录路径
                 Path.Combine(experimentalOptions.DiskRetryDirectoryPath, "metrics"));
         }
         else
         {
+            // 返回普通的传输处理程序
             return new OtlpExporterTransmissionHandler<MetricsOtlpCollector.ExportMetricsServiceRequest>(exportClient, timeoutMilliseconds);
         }
     }
 
+    // 获取 Logs 导出传输处理程序
     public static OtlpExporterTransmissionHandler<LogOtlpCollector.ExportLogsServiceRequest> GetLogsExportTransmissionHandler(this OtlpExporterOptions options, ExperimentalOptions experimentalOptions)
     {
         var exportClient = GetLogExportClient(options);
@@ -239,16 +262,22 @@ internal static class OtlpExporterOptionsExtensions
         }
     }
 
+    // 获取 Trace 导出客户端
     public static IExportClient<TraceOtlpCollector.ExportTraceServiceRequest> GetTraceExportClient(this OtlpExporterOptions options) =>
         options.Protocol switch
         {
+            // 如果协议是 gRPC，则返回 OtlpGrpcTraceExportClient
             OtlpExportProtocol.Grpc => new OtlpGrpcTraceExportClient(options),
+            // 如果协议是 HttpProtobuf，则返回 OtlpHttpTraceExportClient
             OtlpExportProtocol.HttpProtobuf => new OtlpHttpTraceExportClient(
                 options,
+                // 如果 HttpClientFactory 为空，则抛出 InvalidOperationException 异常
                 options.HttpClientFactory?.Invoke() ?? throw new InvalidOperationException("OtlpExporterOptions was missing HttpClientFactory or it returned null.")),
+            // 如果协议不支持，则抛出 NotSupportedException 异常
             _ => throw new NotSupportedException($"Protocol {options.Protocol} is not supported."),
         };
 
+    // 获取 Metrics 导出客户端
     public static IExportClient<MetricsOtlpCollector.ExportMetricsServiceRequest> GetMetricsExportClient(this OtlpExporterOptions options) =>
         options.Protocol switch
         {
@@ -259,6 +288,7 @@ internal static class OtlpExporterOptionsExtensions
             _ => throw new NotSupportedException($"Protocol {options.Protocol} is not supported."),
         };
 
+    // 获取 Log 导出客户端
     public static IExportClient<LogOtlpCollector.ExportLogsServiceRequest> GetLogExportClient(this OtlpExporterOptions options) =>
         options.Protocol switch
         {
@@ -269,6 +299,7 @@ internal static class OtlpExporterOptionsExtensions
             _ => throw new NotSupportedException($"Protocol {options.Protocol} is not supported."),
         };
 
+    // 尝试启用 IHttpClientFactory 集成
     public static void TryEnableIHttpClientFactoryIntegration(this OtlpExporterOptions options, IServiceProvider serviceProvider, string httpClientName)
     {
         if (serviceProvider != null
@@ -308,6 +339,7 @@ internal static class OtlpExporterOptionsExtensions
         }
     }
 
+    // 如果路径不存在则追加路径
     internal static Uri AppendPathIfNotPresent(this Uri uri, string path)
     {
         var absoluteUri = uri.AbsoluteUri;
@@ -315,7 +347,7 @@ internal static class OtlpExporterOptionsExtensions
 
         if (absoluteUri.EndsWith("/"))
         {
-            // Endpoint already ends with 'path/'
+            // Endpoint 已经以 'path/' 结尾
             if (absoluteUri.EndsWith(string.Concat(path, "/"), StringComparison.OrdinalIgnoreCase))
             {
                 return uri;
@@ -323,7 +355,7 @@ internal static class OtlpExporterOptionsExtensions
         }
         else
         {
-            // Endpoint already ends with 'path'
+            // Endpoint 已经以 'path' 结尾
             if (absoluteUri.EndsWith(path, StringComparison.OrdinalIgnoreCase))
             {
                 return uri;

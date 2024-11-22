@@ -6,36 +6,39 @@ using System.Diagnostics;
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// A read-only collection of <see cref="Exemplar" />s.
+/// 表示一个只读的 Exemplar 集合。
 /// </summary>
 public readonly struct ReadOnlyExemplarCollection
 {
+    // 定义一个空的 ReadOnlyExemplarCollection 实例
     internal static readonly ReadOnlyExemplarCollection Empty = new(Array.Empty<Exemplar>());
+    // 存储 Exemplar 的数组
     private readonly Exemplar[] exemplars;
 
+    // 构造函数，初始化 ReadOnlyExemplarCollection 实例
     internal ReadOnlyExemplarCollection(Exemplar[] exemplars)
     {
-        Debug.Assert(exemplars != null, "exemplars was null");
+        Debug.Assert(exemplars != null, "exemplars was null"); // 确保 exemplars 不为 null
 
         this.exemplars = exemplars!;
     }
 
     /// <summary>
-    /// Gets the maximum number of <see cref="Exemplar" />s in the collection.
+    /// 获取集合中 Exemplar 的最大数量。
     /// </summary>
     /// <remarks>
-    /// Note: Enumerating the collection may return fewer results depending on
-    /// which <see cref="Exemplar"/>s in the collection received updates.
+    /// 注意：枚举集合时可能会返回更少的结果，具体取决于集合中的哪些 Exemplar 收到了更新。
     /// </remarks>
     internal int MaximumCount => this.exemplars.Length;
 
     /// <summary>
-    /// Returns an enumerator that iterates through the <see cref="Exemplar" />s.
+    /// 返回一个枚举器，用于遍历 Exemplar 集合。
     /// </summary>
-    /// <returns><see cref="Enumerator"/>.</returns>
+    /// <returns><see cref="Enumerator"/>。</returns>
     public Enumerator GetEnumerator()
         => new(this.exemplars);
 
+    // 复制当前的 ReadOnlyExemplarCollection 实例
     internal ReadOnlyExemplarCollection Copy()
     {
         var maximumCount = this.MaximumCount;
@@ -59,15 +62,14 @@ public readonly struct ReadOnlyExemplarCollection
         return Empty;
     }
 
+    // 将当前的 ReadOnlyExemplarCollection 实例转换为只读列表
     internal IReadOnlyList<Exemplar> ToReadOnlyList()
     {
         var list = new List<Exemplar>(this.MaximumCount);
 
         foreach (var exemplar in this)
         {
-            // Note: If ToReadOnlyList is ever made public it should make sure
-            // to take copies of exemplars or make sure the instance was first
-            // copied using the Copy method above.
+            // 注意：如果 ToReadOnlyList 方法公开，则应确保对 exemplars 进行复制，或者确保实例首先使用上面的 Copy 方法进行复制。
             list.Add(exemplar);
         }
 
@@ -75,13 +77,16 @@ public readonly struct ReadOnlyExemplarCollection
     }
 
     /// <summary>
-    /// Enumerates the elements of a <see cref="ReadOnlyExemplarCollection"/>.
+    /// 枚举 ReadOnlyExemplarCollection 的元素。
     /// </summary>
     public struct Enumerator
     {
+        // 存储 Exemplar 的数组
         private readonly Exemplar[] exemplars;
+        // 当前索引
         private int index;
 
+        // 构造函数，初始化 Enumerator 实例
         internal Enumerator(Exemplar[] exemplars)
         {
             this.exemplars = exemplars;
@@ -89,19 +94,15 @@ public readonly struct ReadOnlyExemplarCollection
         }
 
         /// <summary>
-        /// Gets the <see cref="Exemplar"/> at the current position of the enumerator.
+        /// 获取枚举器当前位置的 Exemplar。
         /// </summary>
         public readonly ref readonly Exemplar Current
             => ref this.exemplars[this.index];
 
         /// <summary>
-        /// Advances the enumerator to the next element of the <see
-        /// cref="ReadOnlyExemplarCollection"/>.
+        /// 将枚举器推进到 ReadOnlyExemplarCollection 的下一个元素。
         /// </summary>
-        /// <returns><see langword="true"/> if the enumerator was
-        /// successfully advanced to the next element; <see
-        /// langword="false"/> if the enumerator has passed the end of the
-        /// collection.</returns>
+        /// <returns>如果枚举器成功地推进到下一个元素，则为 true；如果枚举器已越过集合的末尾，则为 false。</returns>
         public bool MoveNext()
         {
             var exemplars = this.exemplars;

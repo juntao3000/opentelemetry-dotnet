@@ -4,31 +4,31 @@
 namespace OpenTelemetry.Metrics;
 
 /// <summary>
-/// MeterProviderBuilder base class.
+/// MeterProviderBuilder 基类。
 /// </summary>
 public abstract class MeterProviderBuilder
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="MeterProviderBuilder"/> class.
+    /// 初始化 <see cref="MeterProviderBuilder"/> 类的新实例。
     /// </summary>
     protected MeterProviderBuilder()
     {
     }
 
     /// <summary>
-    /// Adds instrumentation to the provider.
+    /// 向提供程序添加仪器。
     /// </summary>
-    /// <typeparam name="TInstrumentation">Type of instrumentation class.</typeparam>
-    /// <param name="instrumentationFactory">Function that builds instrumentation.</param>
-    /// <returns>Returns <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    /// <typeparam name="TInstrumentation">仪器类的类型。</typeparam>
+    /// <param name="instrumentationFactory">构建仪器的函数。</param>
+    /// <returns>返回 <see cref="MeterProviderBuilder"/> 以便链式调用。</returns>
     public abstract MeterProviderBuilder AddInstrumentation<TInstrumentation>(
         Func<TInstrumentation> instrumentationFactory)
         where TInstrumentation : class?;
 
     /// <summary>
-    /// Adds given Meter names to the list of subscribed meters.
+    /// 将给定的 Meter 名称添加到订阅的 meters 列表中。
     /// </summary>
-    /// <param name="names">Meter names.</param>
-    /// <returns>Returns <see cref="MeterProviderBuilder"/> for chaining.</returns>
+    /// <param name="names">Meter 名称。</param>
+    /// <returns>返回 <see cref="MeterProviderBuilder"/> 以便链式调用。</returns>
     public abstract MeterProviderBuilder AddMeter(params string[] names);
 }

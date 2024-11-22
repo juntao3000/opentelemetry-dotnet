@@ -7,17 +7,17 @@ using OpenTelemetry.Internal;
 
 namespace OpenTelemetry.Context;
 
-/// <summary>
-/// Generic runtime context management API.
-/// </summary>
+// OpenTelemetry 上下文管理 API
 public static class RuntimeContext
 {
+    // 用于存储上下文槽的并发字典
     private static readonly ConcurrentDictionary<string, object> Slots = new();
 
+    // 上下文槽类型，默认为 AsyncLocalRuntimeContextSlot<>
     private static Type contextSlotType = typeof(AsyncLocalRuntimeContextSlot<>);
 
     /// <summary>
-    /// Gets or sets the actual context carrier implementation.
+    /// 获取或设置实际的上下文载体实现。
     /// </summary>
     public static Type ContextSlotType
     {
@@ -48,11 +48,11 @@ public static class RuntimeContext
     }
 
     /// <summary>
-    /// Register a named context slot.
+    /// 注册一个命名的上下文槽。
     /// </summary>
-    /// <param name="slotName">The name of the context slot.</param>
-    /// <typeparam name="T">The type of the underlying value.</typeparam>
-    /// <returns>The slot registered.</returns>
+    /// <param name="slotName">上下文槽的名称。</param>
+    /// <typeparam name="T">底层值的类型。</typeparam>
+    /// <returns>注册的上下文槽。</returns>
     public static RuntimeContextSlot<T> RegisterSlot<T>(string slotName)
     {
         Guard.ThrowIfNullOrEmpty(slotName);
@@ -92,11 +92,11 @@ public static class RuntimeContext
     }
 
     /// <summary>
-    /// Get a registered slot from a given name.
+    /// 从给定名称获取已注册的上下文槽。
     /// </summary>
-    /// <param name="slotName">The name of the context slot.</param>
-    /// <typeparam name="T">The type of the underlying value.</typeparam>
-    /// <returns>The slot previously registered.</returns>
+    /// <param name="slotName">上下文槽的名称。</param>
+    /// <typeparam name="T">底层值的类型。</typeparam>
+    /// <returns>先前注册的上下文槽。</returns>
     public static RuntimeContextSlot<T> GetSlot<T>(string slotName)
     {
         Guard.ThrowIfNullOrEmpty(slotName);
@@ -106,36 +106,12 @@ public static class RuntimeContext
         return Guard.ThrowIfNotOfType<RuntimeContextSlot<T>>(slot);
     }
 
-    /*
-    public static void Apply(IDictionary<string, object> snapshot)
-    {
-        foreach (var entry in snapshot)
-        {
-            // TODO: revisit this part if we want Snapshot() to be used on critical paths
-            dynamic value = entry.Value;
-            SetValue(entry.Key, value);
-        }
-    }
-
-    public static IDictionary<string, object> Snapshot()
-    {
-        var retval = new Dictionary<string, object>();
-        foreach (var entry in Slots)
-        {
-            // TODO: revisit this part if we want Snapshot() to be used on critical paths
-            dynamic slot = entry.Value;
-            retval[entry.Key] = slot.Get();
-        }
-        return retval;
-    }
-    */
-
     /// <summary>
-    /// Sets the value to a registered slot.
+    /// 将值设置到已注册的上下文槽中。
     /// </summary>
-    /// <param name="slotName">The name of the context slot.</param>
-    /// <param name="value">The value to be set.</param>
-    /// <typeparam name="T">The type of the value.</typeparam>
+    /// <param name="slotName">上下文槽的名称。</param>
+    /// <param name="value">要设置的值。</param>
+    /// <typeparam name="T">值的类型。</typeparam>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetValue<T>(string slotName, T value)
     {
@@ -143,11 +119,11 @@ public static class RuntimeContext
     }
 
     /// <summary>
-    /// Gets the value from a registered slot.
+    /// 从已注册的上下文槽中获取值。
     /// </summary>
-    /// <param name="slotName">The name of the context slot.</param>
-    /// <typeparam name="T">The type of the value.</typeparam>
-    /// <returns>The value retrieved from the context slot.</returns>
+    /// <param name="slotName">上下文槽的名称。</param>
+    /// <typeparam name="T">值的类型。</typeparam>
+    /// <returns>从上下文槽中检索到的值。</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T? GetValue<T>(string slotName)
     {
@@ -155,10 +131,10 @@ public static class RuntimeContext
     }
 
     /// <summary>
-    /// Sets the value to a registered slot.
+    /// 将值设置到已注册的上下文槽中。
     /// </summary>
-    /// <param name="slotName">The name of the context slot.</param>
-    /// <param name="value">The value to be set.</param>
+    /// <param name="slotName">上下文槽的名称。</param>
+    /// <param name="value">要设置的值。</param>
     public static void SetValue(string slotName, object? value)
     {
         Guard.ThrowIfNullOrEmpty(slotName);
@@ -169,10 +145,10 @@ public static class RuntimeContext
     }
 
     /// <summary>
-    /// Gets the value from a registered slot.
+    /// 从已注册的上下文槽中获取值。
     /// </summary>
-    /// <param name="slotName">The name of the context slot.</param>
-    /// <returns>The value retrieved from the context slot.</returns>
+    /// <param name="slotName">上下文槽的名称。</param>
+    /// <returns>从上下文槽中检索到的值。</returns>
     public static object? GetValue(string slotName)
     {
         Guard.ThrowIfNullOrEmpty(slotName);
@@ -182,12 +158,13 @@ public static class RuntimeContext
         return Guard.ThrowIfNotOfType<IRuntimeContextSlotValueAccessor>(slot).Value;
     }
 
-    // For testing purpose
+    // 用于测试目的
     internal static void Clear()
     {
         Slots.Clear();
     }
 
+    // 检查上下文槽是否存在
     private static object GuardNotFound(string slotName)
     {
         if (!Slots.TryGetValue(slotName, out var slot))
