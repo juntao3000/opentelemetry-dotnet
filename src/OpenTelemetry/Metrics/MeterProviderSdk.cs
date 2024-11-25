@@ -184,7 +184,10 @@ internal sealed class MeterProviderSdk : MeterProvider
         else if (state.MeterSources.Any())
         {
             var meterSourcesToSubscribe = new HashSet<string>(state.MeterSources, StringComparer.OrdinalIgnoreCase);
-            this.shouldListenTo = instrument => meterSourcesToSubscribe.Contains(instrument.Meter.Name);
+            this.shouldListenTo = instrument =>
+            {
+                return meterSourcesToSubscribe.Contains(instrument.Meter.Name);
+            };
         }
 
         // 记录监听的仪表

@@ -151,7 +151,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "learning-more-instruments",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "getting-started-console", "docs\metrics\getting-started-console\getting-started-console.csproj", "{EA60B549-F712-4ABE-8E44-FCA83B78C06E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "getting-started-aspnetcore", "docs\metrics\getting-started-aspnetcore\getting-started-aspnetcore.csproj", "{0C3E7D40-E0B3-4B77-8139-0E85C3600688}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCoreMetrics", "docs\metrics\getting-started-aspnetcore\AspNetCoreMetrics.csproj", "{0C3E7D40-E0B3-4B77-8139-0E85C3600688}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "extending-the-sdk", "docs\metrics\extending-the-sdk\extending-the-sdk.csproj", "{1F9D7748-D099-4E25-97F5-9C969D6FF969}"
 EndProject

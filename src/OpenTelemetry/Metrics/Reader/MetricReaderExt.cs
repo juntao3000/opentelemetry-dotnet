@@ -252,8 +252,8 @@ public abstract partial class MetricReader
     /// <returns>度量批次。</returns>
     private Batch<Metric> GetMetricsBatch()
     {
-        Debug.Assert(this.metrics != null, "this.metrics was null");
-        Debug.Assert(this.metricsCurrentBatch != null, "this.metricsCurrentBatch was null");
+        //Debug.Assert(this.metrics != null, "this.metrics was null");
+        //Debug.Assert(this.metricsCurrentBatch != null, "this.metricsCurrentBatch was null");
 
         try
         {
