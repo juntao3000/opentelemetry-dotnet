@@ -18,6 +18,11 @@ internal sealed class ProcessMetrics
 
     static ProcessMetrics()
     {
+        var myCounter = MeterInstance.CreateCounter<long>(
+            "process.start.time",
+            unit: "ms",
+            description: "The start time of the process.");
+
         MeterInstance.CreateObservableUpDownCounter(
             "process.memory.usage",
             () =>

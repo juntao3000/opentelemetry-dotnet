@@ -3,7 +3,20 @@
     <TargetFrameworks>net8.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
+    <AdditionalFiles Remove="D:\git\opentelemetry-dotnet\build\/stylecop.json" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.AspNetCore\OpenTelemetry.Instrumentation.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.ConfluentKafka\OpenTelemetry.Instrumentation.ConfluentKafka.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.ElasticsearchClient\OpenTelemetry.Instrumentation.ElasticsearchClient.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.EntityFrameworkCore\OpenTelemetry.Instrumentation.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.EventCounters\OpenTelemetry.Instrumentation.EventCounters.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.GrpcNetClient\OpenTelemetry.Instrumentation.GrpcNetClient.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.Http\OpenTelemetry.Instrumentation.Http.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.Process\OpenTelemetry.Instrumentation.Process.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.Runtime\OpenTelemetry.Instrumentation.Runtime.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.SqlClient\OpenTelemetry.Instrumentation.SqlClient.csproj" />
+    <ProjectReference Include="..\..\..\src\opentelemetry-dotnet-contrib\OpenTelemetry.Instrumentation.StackExchangeRedis\OpenTelemetry.Instrumentation.StackExchangeRedis.csproj" />
     <ProjectReference Include="..\..\..\src\OpenTelemetry.Exporter.Console\OpenTelemetry.Exporter.Console.csproj" />
     <ProjectReference Include="..\..\..\src\OpenTelemetry.Exporter.OpenTelemetryProtocol\OpenTelemetry.Exporter.OpenTelemetryProtocol.csproj" />
     <ProjectReference Include="..\..\..\src\OpenTelemetry.Extensions.Hosting\OpenTelemetry.Extensions.Hosting.csproj" />

@@ -1,9 +1,13 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
+using System;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Runtime.Serialization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
@@ -22,7 +26,7 @@ public class Program
         var process = Process.GetCurrentProcess();
 
         //MyMeter.CreateObservableCounter("Thread.CpuTime", () => GetThreadCpuTime(process), "ms");
-        MyMeter.CreateObservableGauge("Thread.State", () => GetThreadState(process));
+        //MyMeter.CreateObservableGauge("Thread.State", () => GetThreadState(process));
 
         //MyMeter.CreateObservableCounter("MyTempCounter", () =>
         //{
@@ -51,23 +55,22 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        var exporter = new FilteredOtlpMetricExporter(new OtlpExporterOptions(), metric =>
-        {
-            return true;
-        });
+        var exporter = new OtlpMetricExporter(new OtlpExporterOptions());
         var reader = new BaseExportingMetricReader(exporter);
 
-
-        //MyMeter
 
         // Configure OpenTelemetry with metrics and auto-start.
         builder.Services.AddOpenTelemetry()
         //.ConfigureResource(resource => resource.AddService(serviceName: builder.Environment.ApplicationName))
         .WithMetrics(metrics => metrics
-            .ConfigureResource(cfg => { })
+            //.ConfigureResource(cfg => { })
             //.AddAspNetCoreInstrumentation()
-            .AddMeter("MyCompany.MyProduct.MyLibrary")
-            .AddReader(new PeriodicExportingMetricReader(new MyConsoleMetricExporter("11111"), 1000))
+            //.AddHttpClientInstrumentation()
+            //.AddProcessInstrumentation()
+            //.AddRuntimeInstrumentation()
+            //.AddEventCountersInstrumentation()
+            //.AddMeter("MyCompany.MyProduct.MyLibrary")
+            .AddReader(new PeriodicExportingMetricReader(new MyConsoleMetricExporter("normal"), 3000))
             //.AddReader(reader)
             //.AddConsoleExporter((exporterOptions, metricReaderOptions) =>
             //{
@@ -82,6 +85,29 @@ public class Program
                 otlpExporterOptions.Endpoint = new Uri("http://localhost:4317");
             })
             );
+
+        var fastMetricReader = new FastMetricReader(new OtlpMetricExporter(new OtlpExporterOptions()), 0);
+        var fastMeterProviderBuilder = Sdk.CreateMeterProviderBuilder()
+            .AddMyInstrumentation()
+            .AddReader(fastMetricReader);
+        fastMeterProviderBuilder.ConfigureServices(tmpServices =>
+        {
+            foreach (var tmpService in tmpServices)
+            {
+                if (tmpService == null)
+                {
+                    continue;
+                }
+
+                if (tmpService.ServiceType.CustomAttributes.Any(x => x.AttributeType == typeof(FastInstrumentationAttribute)))
+                {
+                    builder.Services.Add(tmpService);
+                }
+            }
+        });
+
+        builder.Services.AddSingleton<IFastMetricReader>(fastMetricReader);
+        using var fastMeterProvider = fastMeterProviderBuilder.Build();
 
         var app = builder.Build();
 
@@ -100,6 +126,21 @@ public class Program
 
             reader.Collect();
             return "t2";
+        });
+
+        app.MapGet("/test", ([FromServices] MyInstrumentation instrumentation) =>
+        {
+            instrumentation.MyTestCounter11.Add(1);
+
+            return "test";
+        });
+
+        app.MapGet("/test2", ([FromServices] MyInstrumentation instrumentation, [FromServices] IFastMetricReader fastReader) =>
+        {
+            instrumentation.MyTestCounter11.Add(2);
+            fastReader.Collect();
+
+            return "test2";
         });
 
         app.Run();
