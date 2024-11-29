@@ -8,7 +8,6 @@ using System.Diagnostics.Metrics;
 
 namespace AspNetCoreMetrics;
 
-[FastInstrumentation]
 internal class MyInstrumentation : IDisposable
 {
     internal const string MeterName = "Dida.Test.Instrumentation";
