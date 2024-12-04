@@ -90,21 +90,6 @@ public class Program
         var fastMeterProviderBuilder = Sdk.CreateMeterProviderBuilder()
             .AddMyInstrumentation()
             .AddReader(fastMetricReader);
-        fastMeterProviderBuilder.ConfigureServices(tmpServices =>
-        {
-            foreach (var tmpService in tmpServices)
-            {
-                if (tmpService == null)
-                {
-                    continue;
-                }
-
-                if (tmpService.ServiceType.CustomAttributes.Any(x => x.AttributeType == typeof(FastInstrumentationAttribute)))
-                {
-                    builder.Services.Add(tmpService);
-                }
-            }
-        });
 
         builder.Services.AddSingleton<IFastMetricReader>(fastMetricReader);
         using var fastMeterProvider = fastMeterProviderBuilder.Build();
