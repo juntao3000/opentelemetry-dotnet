@@ -64,7 +64,7 @@ public class Program
         //.ConfigureResource(resource => resource.AddService(serviceName: builder.Environment.ApplicationName))
         .WithMetrics(metrics => metrics
             //.ConfigureResource(cfg => { })
-            //.AddAspNetCoreInstrumentation()
+            .AddAspNetCoreInstrumentation()
             //.AddHttpClientInstrumentation()
             //.AddProcessInstrumentation()
             //.AddRuntimeInstrumentation()
